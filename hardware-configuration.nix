@@ -19,7 +19,7 @@
   };
 
   # EFI boot partition
-  fileSystems."/boot/efi" = {
+  fileSystems."/boot" = {
     device = "/dev/disk/by-uuid/9EBA-77A5";
     fsType = "vfat";
     options = [ "fmask=0022" "dmask=0022" ];

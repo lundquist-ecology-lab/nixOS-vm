@@ -228,8 +228,8 @@ mkfs.ext4 -L nixos /dev/sda2
 
 # Mount
 mount /dev/sda2 /mnt
-mkdir -p /mnt/boot/efi
-mount /dev/sda1 /mnt/boot/efi
+mkdir -p /mnt/boot
+mount /dev/sda1 /mnt/boot
 
 # Generate config (this creates a base config)
 nixos-generate-config --root /mnt

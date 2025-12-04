@@ -44,8 +44,8 @@
    mkfs.ext4 -L nixos /dev/sda2
 
    mount /dev/sda2 /mnt
-   mkdir -p /mnt/boot/efi
-   mount /dev/sda1 /mnt/boot/efi
+   mkdir -p /mnt/boot
+   mount /dev/sda1 /mnt/boot
    ```
 
 6. **Copy config files to the mounted system:**
