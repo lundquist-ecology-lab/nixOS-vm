@@ -81,6 +81,7 @@
     git
     htop
     tailscale
+    ollama
   ];
 
   # Enable the OpenSSH daemon
@@ -94,6 +95,12 @@
 
   # Enable Tailscale
   services.tailscale.enable = true;
+  
+  # Enable Ollama
+  services.ollama = {
+    enable = true;
+       acceleration = "cuda"; # Use NVIDIA CUDA acceleration
+       };
 
   # Enable Docker
   virtualisation.docker = {
