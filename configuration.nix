@@ -82,6 +82,7 @@
     htop
     tailscale
     ollama
+    kitty.terminfo
   ];
 
   # Enable the OpenSSH daemon
