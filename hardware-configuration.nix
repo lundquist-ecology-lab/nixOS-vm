@@ -14,13 +14,13 @@
 
   # Root filesystem
   fileSystems."/" = {
-    device = "/dev/disk/by-uuid/df7729c6-97a4-4a34-8f5e-ab3de4d49e22";
+    device = "/dev/disk/by-uuid/8b6fc16e-5626-42ab-b759-30cc561ca1f1";
     fsType = "ext4";
   };
 
   # EFI boot partition
   fileSystems."/boot" = {
-    device = "/dev/disk/by-uuid/9EBA-77A5";
+    device = "/dev/disk/by-uuid/0ABC-3202";
     fsType = "vfat";
     options = [ "fmask=0022" "dmask=0022" ];
   };

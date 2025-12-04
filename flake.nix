@@ -7,20 +7,38 @@
   };
 
   outputs = { self, nixpkgs, nix-ai-tools, ... }: {
-    nixosConfigurations.nix-python = nixpkgs.lib.nixosSystem {
-      system = "x86_64-linux";
-      modules = [
-        ./configuration.nix
-        ({ pkgs, ... }: {
-          environment.systemPackages = with nix-ai-tools.packages.${pkgs.system}; [
-            claude-code
-            opencode
-            crush
-            gemini-cli
-            codex
-          ];
-        })
-      ];
+    nixosConfigurations = {
+      nix-python = nixpkgs.lib.nixosSystem {
+        system = "x86_64-linux";
+        modules = [
+          ./configuration.nix
+          ({ pkgs, ... }: {
+            environment.systemPackages = with nix-ai-tools.packages.${pkgs.system}; [
+              claude-code
+              opencode
+              crush
+              gemini-cli
+              codex
+            ];
+          })
+        ];
+      };
+
+      moria = nixpkgs.lib.nixosSystem {
+        system = "x86_64-linux";
+        modules = [
+          ./configuration.nix
+          ({ pkgs, ... }: {
+            environment.systemPackages = with nix-ai-tools.packages.${pkgs.system}; [
+              claude-code
+              opencode
+              crush
+              gemini-cli
+              codex
+            ];
+          })
+        ];
+      };
     };
   };
 }
