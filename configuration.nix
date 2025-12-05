@@ -33,36 +33,46 @@
     LC_TIME = "en_US.UTF-8";
   };
 
-  # Enable NVIDIA drivers
+  # Enable NVIDIA drivers for passthrough GPU
   # Note: This is for the passthrough GeForce RTX 5060 Ti
   services.xserver.videoDrivers = [ "nvidia" ];
-  hardware.graphics.enable = true;
+  hardware.graphics = {
+    enable = true;
+    enable32Bit = true;
+  };
 
   hardware.nvidia = {
-    # Modesetting is required
+    # Modesetting is required for Wayland and modern compositors
     modesetting.enable = true;
 
-    # Power management (experimental, can cause sleep/suspend issues)
+    # Power management - disabled in VMs to avoid issues
     powerManagement.enable = false;
     powerManagement.finegrained = false;
 
-    # Use the open source kernel module (for newer cards)
-    # Set to false if you have stability issues
+    # Use proprietary driver for RTX 5060 Ti
+    # The open-source driver may not have full support yet for RTX 50 series
     open = false;
 
     # Enable the Nvidia settings menu
     nvidiaSettings = true;
 
-    # Select the appropriate driver version for your card
-    # For RTX 5060 Ti, use the latest production driver
-    package = config.boot.kernelPackages.nvidiaPackages.stable;
+    # Use beta driver for best RTX 5060 Ti support
+    package = config.boot.kernelPackages.nvidiaPackages.beta;
   };
+
+  # Ensure nvidia modules are loaded during early boot (initrd) and enable virtiofs support for shared folders
+  boot.initrd.kernelModules = [ "nvidia" "nvidia_modeset" "nvidia_uvm" "nvidia_drm" ];
+  boot.kernelModules = [ "virtiofs" ];
+
+  # Enable zsh system-wide
+  programs.zsh.enable = true;
 
   # User accounts
   users.users.mlundquist = {
     isNormalUser = true;
     description = "mlundquist";
-    extraGroups = [ "networkmanager" "wheel" "docker" ];
+    shell = pkgs.zsh;
+    extraGroups = [ "networkmanager" "wheel" "docker" "media" "video" "audio" ];
     # Set your password using: passwd mlundquist
     # Or use hashedPassword here
   };
@@ -83,6 +93,8 @@
     tailscale
     ollama
     kitty.terminfo
+    neovim
+    zsh
   ];
 
   # Enable the OpenSSH daemon
@@ -117,9 +129,6 @@
   # networking.firewall.allowedUDPPorts = [ ... ];
   # Or disable the firewall altogether (not recommended for production)
   # networking.firewall.enable = false;
-
-  # Enable virtiofs support for shared folders
-  boot.kernelModules = [ "virtiofs" ];
 
   # This value determines the NixOS release from which the default
   # settings for stateful data, like file locations and database versions
