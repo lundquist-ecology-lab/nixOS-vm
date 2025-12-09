@@ -36,7 +36,7 @@
     LC_TIME = "en_US.UTF-8";
   };
 
-  # Enable NVIDIA drivers for passthrough GPU (headless, no X server needed)
+  # Enable NVIDIA drivers for passthrough GPU
   services.xserver.videoDrivers = [ "nvidia" ];
 
   hardware.graphics = {
@@ -93,6 +93,13 @@
         user = "mlundquist";
       };
     };
+
+    # Explicitly configure NVIDIA device with BusID
+    deviceSection = ''
+      BusID "PCI:1:0:0"
+      Option "ConnectedMonitor" "DP-3"
+      Option "AllowEmptyInitialConfiguration" "True"
+    '';
   };
 
   # Allow unfree packages (needed for NVIDIA drivers)
@@ -154,7 +161,7 @@
   services.timesyncd.enable = true;
 
   # Open ports in the firewall
-  networking.firewall.allowedTCPPorts = [ 5900 ];  # wayvnc
+  networking.firewall.allowedTCPPorts = [ 5900 ];  # x11vnc
   # networking.firewall.allowedUDPPorts = [ ... ];
   # Or disable the firewall altogether (not recommended for production)
   # networking.firewall.enable = false;
