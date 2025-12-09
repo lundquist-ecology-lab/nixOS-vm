@@ -26,13 +26,13 @@
   };
 
   # Virtiofs mounts (shared folders from host)
-  fileSystems."/mnt/peppy" = {
+  fileSystems."/peppy" = {
     device = "peppy";
     fsType = "virtiofs";
     options = [ "rw" "x-systemd.automount" "_netdev" "nofail" ];
   };
 
-  fileSystems."/mnt/onyx" = {
+  fileSystems."/onyx" = {
     device = "onyx";
     fsType = "virtiofs";
     options = [ "rw" "x-systemd.automount" "_netdev" "nofail" ];

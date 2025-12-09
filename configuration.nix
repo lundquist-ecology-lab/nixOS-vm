@@ -16,6 +16,9 @@
   networking.hostName = "nix-python";
   networking.networkmanager.enable = true;
 
+  # Disable waiting for network online during boot to prevent DHCP delays
+  systemd.services.NetworkManager-wait-online.enable = false;
+
   # Set your time zone
   time.timeZone = "US/Eastern";
 
@@ -33,36 +36,38 @@
     LC_TIME = "en_US.UTF-8";
   };
 
-  # Enable NVIDIA drivers for passthrough GPU
-  # Note: This is for the passthrough GeForce RTX 5060 Ti
+  # Enable NVIDIA drivers for passthrough GPU (headless, no X server needed)
   services.xserver.videoDrivers = [ "nvidia" ];
+
   hardware.graphics = {
     enable = true;
-    enable32Bit = true;
+    enable32Bit = true; # Required for CUDA + Steam
   };
+
+  # Needed for proprietary NVIDIA firmware blobs
+  hardware.enableRedistributableFirmware = true;
 
   hardware.nvidia = {
-    # Modesetting is required for Wayland and modern compositors
     modesetting.enable = true;
-
-    # Power management - disabled in VMs to avoid issues
-    powerManagement.enable = false;
+    powerManagement.enable = true;
     powerManagement.finegrained = false;
 
-    # Use proprietary driver for RTX 5060 Ti
-    # The open-source driver may not have full support yet for RTX 50 series
-    open = false;
+    # Required for Ada/Blackwell GPUs: use NVIDIA's open kernel module
+    open = true;
 
-    # Enable the Nvidia settings menu
     nvidiaSettings = true;
 
-    # Use beta driver for best RTX 5060 Ti support
-    package = config.boot.kernelPackages.nvidiaPackages.beta;
+    package = config.boot.kernelPackages.nvidiaPackages.beta;  # Use beta driver for latest GPU support
   };
 
-  # Ensure nvidia modules are loaded during early boot (initrd) and enable virtiofs support for shared folders
-  boot.initrd.kernelModules = [ "nvidia" "nvidia_modeset" "nvidia_uvm" "nvidia_drm" ];
-  boot.kernelModules = [ "virtiofs" ];
+  boot.blacklistedKernelModules = [ "nouveau" "nvidiafb" ];
+
+  boot.kernelParams = [
+    "nvidia-drm.modeset=1"
+  ];
+
+  # Load NVIDIA stack during normal boot (not initrd), plus virtiofs for shared folders
+  boot.kernelModules = [ "nvidia" "nvidia_modeset" "nvidia_uvm" "nvidia_drm" "virtiofs" ];
 
   # Enable zsh system-wide
   programs.zsh.enable = true;
@@ -83,11 +88,15 @@
   # Allow unfree packages (needed for NVIDIA drivers)
   nixpkgs.config.allowUnfree = true;
 
+  # Enable experimental features for flakes
+  nix.settings.experimental-features = [ "nix-command" "flakes" ];
+
   # System packages
   environment.systemPackages = with pkgs; [
     vim
     wget
     curl
+    pciutils
     git
     htop
     tailscale
