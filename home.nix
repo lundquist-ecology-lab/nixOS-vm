@@ -83,69 +83,6 @@
     configFile."oh-my-posh/kitty.omp.json" = {
       source = ./dotfiles/oh-my-posh/kitty.omp.json;
     };
-    configFile."niri/config.kdl" = {
-      text = ''
-        // Niri configuration with black background
-
-        input {
-            keyboard {
-                xkb {
-                    layout "us"
-                }
-            }
-
-            touchpad {
-                tap
-                natural-scroll
-            }
-        }
-
-        output "HDMI-A-1" {
-            mode "1920x1080@60"
-        }
-
-        layout {
-            gaps 8
-            center-focused-column "never"
-        }
-
-        // Black background
-        prefer-no-csd
-
-        screenshot-path "~/Pictures/Screenshots/screenshot-%Y-%m-%d-%H-%M-%S.png"
-
-        hotkey-overlay {
-            skip-at-startup
-        }
-
-        // Key bindings
-        binds {
-            Mod+Return { spawn "kitty"; }
-            Mod+D { spawn "fuzzel"; }
-            Mod+Q { close-window; }
-
-            Mod+Left { focus-column-left; }
-            Mod+Right { focus-column-right; }
-            Mod+Up { focus-window-up; }
-            Mod+Down { focus-window-down; }
-
-            Mod+Shift+Left { move-column-left; }
-            Mod+Shift+Right { move-column-right; }
-            Mod+Shift+Up { move-window-up; }
-            Mod+Shift+Down { move-window-down; }
-
-            Mod+Shift+E { quit; }
-        }
-
-        environment {
-            DISPLAY null
-            XCURSOR_SIZE "24"
-        }
-
-        // Black background color
-        background-color "#000000"
-      '';
-    };
   };
 
   home.packages = with pkgs; [
@@ -155,21 +92,20 @@
     fd
     jq
     htop
-    fuzzel  # Application launcher for Wayland
     kitty   # Terminal emulator
-    wayvnc  # VNC server for Wayland (for Guacamole)
+    x11vnc  # VNC server for X11 (for Guacamole)
   ];
 
-  # Systemd user service for wayvnc
-  systemd.user.services.wayvnc = {
+  # Systemd user service for x11vnc
+  systemd.user.services.x11vnc = {
     Unit = {
-      Description = "WayVNC - VNC server for Wayland";
+      Description = "x11vnc - VNC server for X11";
       After = [ "graphical-session.target" ];
       PartOf = [ "graphical-session.target" ];
     };
     Service = {
       Type = "simple";
-      ExecStart = "${pkgs.wayvnc}/bin/wayvnc 0.0.0.0 5900";
+      ExecStart = "${pkgs.x11vnc}/bin/x11vnc -display :0 -forever -shared -rfbport 5900";
       Restart = "on-failure";
       RestartSec = 3;
     };

@@ -82,22 +82,14 @@
     # Or use hashedPassword here
   };
 
-  # Enable niri Wayland compositor
-  programs.niri = {
+  # Enable XFCE desktop environment
+  services.xserver = {
     enable = true;
-    package = pkgs.niri;
-  };
-
-  # Enable greetd display manager with auto-login to niri
-  services.greetd = {
-    enable = true;
-    settings = {
-      default_session = {
-        command = "${pkgs.greetd.tuigreet}/bin/tuigreet --time --cmd niri-session";
-        user = "mlundquist";
-      };
-      initial_session = {
-        command = "niri-session";
+    desktopManager.xfce.enable = true;
+    displayManager.lightdm = {
+      enable = true;
+      autoLogin = {
+        enable = true;
         user = "mlundquist";
       };
     };
@@ -122,13 +114,12 @@
     kitty.terminfo
     neovim
     zsh
-    wayvnc  # VNC server for Wayland compositors
+    x11vnc  # VNC server for X11
   ];
 
   # Enable XDG Desktop Portal for screen sharing and remote access
   xdg.portal = {
     enable = true;
-    wlr.enable = true;
     extraPortals = [ pkgs.xdg-desktop-portal-gtk ];
   };
 
@@ -162,8 +153,8 @@
   # Enable time synchronization
   services.timesyncd.enable = true;
 
-  # Open ports in the firewall (adjust as needed)
-  # networking.firewall.allowedTCPPorts = [ ... ];
+  # Open ports in the firewall
+  networking.firewall.allowedTCPPorts = [ 5900 ];  # wayvnc
   # networking.firewall.allowedUDPPorts = [ ... ];
   # Or disable the firewall altogether (not recommended for production)
   # networking.firewall.enable = false;
