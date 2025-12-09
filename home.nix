@@ -7,7 +7,7 @@
   home.sessionVariables = {
     EDITOR = "nvim";
     VISUAL = "nvim";
-    TERMINAL = "foot";
+    TERMINAL = "xfce4-terminal";
   };
 
   home.sessionPath = [
@@ -43,7 +43,9 @@
 
         # Aliases
         alias zshconfig="nvim ~/.zshrc"
-        alias term="foot"
+        alias term="xfce4-terminal"
+        alias onyx="cd /onyx"
+        alias peppy="cd /peppy"
         setopt NO_BEEP
 
         export VISUAL="nvim"
@@ -85,13 +87,51 @@
     configFile."oh-my-posh/kitty.omp.json" = {
       source = ./dotfiles/oh-my-posh/kitty.omp.json;
     };
+    configFile."xfce4/terminal/terminalrc" = {
+      text = ''
+        [Configuration]
+        FontName=JetBrainsMono Nerd Font 11
+        MiscAlwaysShowTabs=FALSE
+        MiscBell=FALSE
+        MiscBellUrgent=FALSE
+        MiscBordersDefault=TRUE
+        MiscCursorBlinks=FALSE
+        MiscCursorShape=TERMINAL_CURSOR_SHAPE_BLOCK
+        MiscDefaultGeometry=100x30
+        MiscInheritGeometry=FALSE
+        MiscMenubarDefault=FALSE
+        MiscMouseAutohide=FALSE
+        MiscMouseWheelZoom=TRUE
+        MiscToolbarDefault=FALSE
+        MiscConfirmClose=TRUE
+        MiscCycleTabs=TRUE
+        MiscTabCloseButtons=TRUE
+        MiscTabCloseMiddleClick=TRUE
+        MiscTabPosition=GTK_POS_TOP
+        MiscHighlightUrls=TRUE
+        MiscMiddleClickOpensUri=FALSE
+        MiscCopyOnSelect=FALSE
+        MiscShowRelaunchDialog=TRUE
+        MiscRewrapOnResize=TRUE
+        MiscUseShiftArrowsToScroll=FALSE
+        MiscSlimTabs=FALSE
+        MiscNewTabAdjacent=FALSE
+        MiscSearchDialogOpacity=100
+        MiscShowUnsafePasteDialog=TRUE
+        ColorForeground=#ffffff
+        ColorBackground=#1e1e1e
+        ColorCursor=#ffffff
+        ColorBoldUseDefault=FALSE
+        TabActivityColor=#dc322f
+      '';
+    };
   };
 
-  # Set XFCE default terminal to foot
+  # Set XFCE default terminal to xfce4-terminal
   xfconf.settings = {
     xfce4-keyboard-shortcuts = {
-      "commands/default/<Super>t" = "foot";
-      "commands/custom/<Primary><Alt>t" = "foot";
+      "commands/default/<Super>t" = "xfce4-terminal";
+      "commands/custom/<Primary><Alt>t" = "xfce4-terminal";
     };
   };
 
@@ -104,8 +144,7 @@
     yq
     htop
     btop
-    foot    # Lightweight terminal emulator (better for VNC)
-    kitty   # Terminal emulator (GPU-accelerated, slower over VNC)
+    kitty   # Terminal emulator (GPU-accelerated, slower over VNC, kept as backup)
     x11vnc  # VNC server for X11
 
     # Additional CLI tools
@@ -148,12 +187,12 @@
   gtk = {
     enable = true;
     theme = {
-      package = pkgs.paradise-gtk-theme;
-      name = "paradise";
+      package = pkgs.arc-theme;
+      name = "Arc-Dark";
     };
     iconTheme = {
-      package = pkgs.tela-icon-theme;
-      name = "Tela-black-dark";
+      package = pkgs.papirus-icon-theme;
+      name = "Papirus-Dark";
     };
     cursorTheme = {
       package = pkgs.bibata-cursors;
@@ -172,8 +211,8 @@
   dconf.settings = {
     "org/gnome/desktop/interface" = {
       color-scheme = "prefer-dark";
-      gtk-theme = "paradise";
-      icon-theme = "Tela-black-dark";
+      gtk-theme = "Arc-Dark";
+      icon-theme = "Papirus-Dark";
       cursor-theme = "Bibata-Modern-Classic";
       cursor-size = 24;
     };

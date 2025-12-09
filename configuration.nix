@@ -77,9 +77,14 @@
     isNormalUser = true;
     description = "mlundquist";
     shell = pkgs.zsh;
-    extraGroups = [ "networkmanager" "wheel" "docker" "media" "video" "audio" ];
+    extraGroups = [ "networkmanager" "wheel" "docker" "media" "video" "audio" "shares" ];
     # Set your password using: passwd mlundquist
     # Or use hashedPassword here
+  };
+
+  # Create shares group with GID 1002 to match Proxmox host permissions
+  users.groups.shares = {
+    gid = 1002;
   };
 
   # Enable XFCE desktop environment
@@ -118,17 +123,15 @@
     htop
     tailscale
     ollama
-    foot.terminfo
     kitty.terminfo
     neovim
     zsh
     x11vnc  # VNC server for X11
 
     # Theming
-    paradise-gtk-theme
-    tela-icon-theme
-    bibata-cursors
+    arc-theme
     papirus-icon-theme
+    bibata-cursors
     adwaita-qt
     libsForQt5.qt5ct
     lxappearance  # GTK theme configuration tool
@@ -137,7 +140,7 @@
     noto-fonts
     noto-fonts-cjk-sans
     noto-fonts-color-emoji
-    (nerdfonts.override { fonts = [ "JetBrainsMono" ]; })
+    (nerd-fonts.jetbrains-mono or (nerdfonts.override { fonts = [ "JetBrainsMono" ]; }))
     jetbrains-mono
     font-awesome
 
