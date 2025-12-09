@@ -82,8 +82,26 @@
     # Or use hashedPassword here
   };
 
-  # Enable automatic login (optional, comment out if not desired)
-  # services.getty.autologinUser = "mlundquist";
+  # Enable niri Wayland compositor
+  programs.niri = {
+    enable = true;
+    package = pkgs.niri;
+  };
+
+  # Enable greetd display manager with auto-login to niri
+  services.greetd = {
+    enable = true;
+    settings = {
+      default_session = {
+        command = "${pkgs.greetd.tuigreet}/bin/tuigreet --time --cmd niri-session";
+        user = "mlundquist";
+      };
+      initial_session = {
+        command = "niri-session";
+        user = "mlundquist";
+      };
+    };
+  };
 
   # Allow unfree packages (needed for NVIDIA drivers)
   nixpkgs.config.allowUnfree = true;
@@ -104,7 +122,15 @@
     kitty.terminfo
     neovim
     zsh
+    wayvnc  # VNC server for Wayland compositors
   ];
+
+  # Enable XDG Desktop Portal for screen sharing and remote access
+  xdg.portal = {
+    enable = true;
+    wlr.enable = true;
+    extraPortals = [ pkgs.xdg-desktop-portal-gtk ];
+  };
 
   # Enable the OpenSSH daemon
   services.openssh = {
