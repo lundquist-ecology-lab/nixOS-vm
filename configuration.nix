@@ -107,11 +107,34 @@
     '';
   };
 
+  # Disable XFCE compositor system-wide for VNC performance
+  services.xserver.desktopManager.xfce.enableXfwm = true;
+
+  # Performance optimizations for VM
+  services.journald.extraConfig = ''
+    SystemMaxUse=100M
+  '';
+
+  # Reduce swappiness for better performance
+  boot.kernel.sysctl = {
+    "vm.swappiness" = 10;
+  };
+
   # Allow unfree packages (needed for NVIDIA drivers)
   nixpkgs.config.allowUnfree = true;
 
   # Enable experimental features for flakes
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
+
+  # Fonts configuration
+  fonts.packages = with pkgs; [
+    noto-fonts
+    noto-fonts-cjk-sans
+    noto-fonts-color-emoji
+    (nerd-fonts.jetbrains-mono or (nerdfonts.override { fonts = [ "JetBrainsMono" ]; }))
+    jetbrains-mono
+    font-awesome
+  ];
 
   # System packages
   environment.systemPackages = with pkgs; [
@@ -135,14 +158,6 @@
     adwaita-qt
     libsForQt5.qt5ct
     lxappearance  # GTK theme configuration tool
-
-    # Fonts
-    noto-fonts
-    noto-fonts-cjk-sans
-    noto-fonts-color-emoji
-    (nerd-fonts.jetbrains-mono or (nerdfonts.override { fonts = [ "JetBrainsMono" ]; }))
-    jetbrains-mono
-    font-awesome
 
     # GUI Applications
     firefox

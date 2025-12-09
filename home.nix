@@ -133,6 +133,22 @@
       "commands/default/<Super>t" = "xfce4-terminal";
       "commands/custom/<Primary><Alt>t" = "xfce4-terminal";
     };
+
+    # Performance optimizations for VNC
+    xfwm4 = {
+      "general/use_compositing" = false;  # Disable compositor for VNC
+      "general/vblank_mode" = "off";
+      "general/frame_opacity" = 100;
+      "general/inactive_opacity" = 100;
+      "general/show_frame_shadow" = false;
+      "general/show_popup_shadow" = false;
+    };
+
+    xsettings = {
+      "Gtk/EnableAnimations" = false;  # Disable animations
+      "Gtk/CursorThemeName" = "Bibata-Modern-Classic";
+      "Gtk/CursorThemeSize" = 24;
+    };
   };
 
   home.packages = with pkgs; [
@@ -165,7 +181,7 @@
     ]))
   ];
 
-  # Systemd user service for x11vnc
+  # Systemd user service for x11vnc with performance optimizations
   systemd.user.services.x11vnc = {
     Unit = {
       Description = "x11vnc - VNC server for X11";
@@ -174,7 +190,14 @@
     };
     Service = {
       Type = "simple";
-      ExecStart = "${pkgs.x11vnc}/bin/x11vnc -display :0 -forever -shared -rfbport 5900";
+      # Performance-optimized x11vnc flags:
+      # -ncache 10: Client-side caching for better performance
+      # -ncache_cr: Cache copyrect for window movements
+      # -speeds lan: Optimize for LAN speeds
+      # -threads: Enable multi-threading
+      # -wireframe: Show wireframes during window moves (faster)
+      # -scrollcopyrect: Optimize scrolling
+      ExecStart = "${pkgs.x11vnc}/bin/x11vnc -display :0 -forever -shared -rfbport 5900 -ncache 10 -ncache_cr -speeds lan -threads -wireframe -scrollcopyrect";
       Restart = "on-failure";
       RestartSec = 3;
     };
