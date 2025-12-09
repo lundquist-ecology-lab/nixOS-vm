@@ -156,6 +156,9 @@
     enableOnBoot = true;
   };
 
+  # Enable Proxmox guest agent for VM integration
+  services.qemuGuest.enable = true;
+
   # Enable time synchronization
   services.timesyncd.enable = true;
 
