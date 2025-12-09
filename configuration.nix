@@ -118,11 +118,82 @@
     htop
     tailscale
     ollama
+    foot.terminfo
     kitty.terminfo
     neovim
     zsh
     x11vnc  # VNC server for X11
+
+    # Theming
+    paradise-gtk-theme
+    tela-icon-theme
+    bibata-cursors
+    papirus-icon-theme
+    adwaita-qt
+    libsForQt5.qt5ct
+    lxappearance  # GTK theme configuration tool
+
+    # Fonts
+    noto-fonts
+    noto-fonts-cjk-sans
+    noto-fonts-color-emoji
+    (nerdfonts.override { fonts = [ "JetBrainsMono" ]; })
+    jetbrains-mono
+    font-awesome
+
+    # GUI Applications
+    firefox
+    thunderbird
+    gimp
+    blender
+    nautilus  # GNOME Files
+    obs-studio
+    remmina
+    mpv
+    imv  # Image viewer
+    zathura  # PDF viewer
+    file-roller  # Archive manager
+
+    # Development tools
+    texliveFull
+    pandoc
+    biber
+    librsvg
+
+    # System utilities
+    bat
+    ripgrep
+    fd
+    fzf
+    zoxide
+    brightnessctl
+    pavucontrol
+    gvfs  # Virtual filesystems for Nautilus
+    udiskie
+    trash-cli
+    tree-sitter
+    fastfetch
+    btop
+
+    # CLI tools
+    jq
+    yq
+    tmux
+    ranger
+    yazi
+    yt-dlp
+    rsync
+    unzip
+    zip
   ];
+
+  # Environment variables for theming
+  environment.sessionVariables = {
+    XCURSOR_THEME = "Bibata-Modern-Classic";
+    XCURSOR_SIZE = "24";
+    QT_QPA_PLATFORMTHEME = "qt5ct";
+    QT_STYLE_OVERRIDE = "adwaita-dark";
+  };
 
   # Enable XDG Desktop Portal for screen sharing and remote access
   xdg.portal = {

@@ -7,6 +7,7 @@
   home.sessionVariables = {
     EDITOR = "nvim";
     VISUAL = "nvim";
+    TERMINAL = "foot";
   };
 
   home.sessionPath = [
@@ -42,6 +43,7 @@
 
         # Aliases
         alias zshconfig="nvim ~/.zshrc"
+        alias term="foot"
         setopt NO_BEEP
 
         export VISUAL="nvim"
@@ -85,15 +87,43 @@
     };
   };
 
+  # Set XFCE default terminal to foot
+  xfconf.settings = {
+    xfce4-keyboard-shortcuts = {
+      "commands/default/<Super>t" = "foot";
+      "commands/custom/<Primary><Alt>t" = "foot";
+    };
+  };
+
   home.packages = with pkgs; [
     unstablePkgs.oh-my-posh
     zoxide
     ripgrep
     fd
     jq
+    yq
     htop
-    kitty   # Terminal emulator
-    x11vnc  # VNC server for X11 (for Guacamole)
+    btop
+    foot    # Lightweight terminal emulator (better for VNC)
+    kitty   # Terminal emulator (GPU-accelerated, slower over VNC)
+    x11vnc  # VNC server for X11
+
+    # Additional CLI tools
+    glow  # Markdown viewer
+    gh    # GitHub CLI
+
+    # Python packages (integrated)
+    (python311.withPackages (ps: with ps; [
+      gdal
+      pillow
+      pip
+      poetry-core
+      pynvim
+      seaborn
+      statsmodels
+      pandocfilters
+      panflute
+    ]))
   ];
 
   # Systemd user service for x11vnc
@@ -112,6 +142,48 @@
     Install = {
       WantedBy = [ "graphical-session.target" ];
     };
+  };
+
+  # GTK theming configuration
+  gtk = {
+    enable = true;
+    theme = {
+      package = pkgs.paradise-gtk-theme;
+      name = "paradise";
+    };
+    iconTheme = {
+      package = pkgs.tela-icon-theme;
+      name = "Tela-black-dark";
+    };
+    cursorTheme = {
+      package = pkgs.bibata-cursors;
+      name = "Bibata-Modern-Classic";
+      size = 24;
+    };
+    gtk3.extraConfig = {
+      gtk-application-prefer-dark-theme = true;
+    };
+    gtk4.extraConfig = {
+      gtk-application-prefer-dark-theme = true;
+    };
+  };
+
+  # dconf settings for GNOME/GTK applications
+  dconf.settings = {
+    "org/gnome/desktop/interface" = {
+      color-scheme = "prefer-dark";
+      gtk-theme = "paradise";
+      icon-theme = "Tela-black-dark";
+      cursor-theme = "Bibata-Modern-Classic";
+      cursor-size = 24;
+    };
+  };
+
+  # Qt theming
+  qt = {
+    enable = true;
+    platformTheme.name = "qtct";
+    style.name = "adwaita-dark";
   };
 
   home.stateVersion = "25.11";
