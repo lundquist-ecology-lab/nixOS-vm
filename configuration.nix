@@ -102,8 +102,14 @@
     # Explicitly configure NVIDIA device with BusID
     deviceSection = ''
       BusID "PCI:1:0:0"
-      Option "ConnectedMonitor" "DP-3"
-      Option "AllowEmptyInitialConfiguration" "True"
+      Option "ConnectedMonitor" "DFP-0"
+      Option "ModeValidation" "AllowNonEdidModes, NoVertRefreshCheck, NoHorizSyncCheck, NoMaxPClkCheck"
+      Option "AllowEmptyInitialConfiguration" "False"
+    '';
+
+    screenSection = ''
+      Option "metamodes" "DFP-0: 1920x1080_60 +0+0"
+      DefaultDepth 24
     '';
   };
 
@@ -153,7 +159,7 @@
 
     # Theming
     arc-theme
-    papirus-icon-theme
+    tela-icon-theme
     bibata-cursors
     adwaita-qt
     libsForQt5.qt5ct

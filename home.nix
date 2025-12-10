@@ -110,7 +110,7 @@
         MiscTabPosition=GTK_POS_TOP
         MiscHighlightUrls=TRUE
         MiscMiddleClickOpensUri=FALSE
-        MiscCopyOnSelect=FALSE
+        MiscCopyOnSelect=TRUE
         MiscShowRelaunchDialog=TRUE
         MiscRewrapOnResize=TRUE
         MiscUseShiftArrowsToScroll=FALSE
@@ -118,11 +118,14 @@
         MiscNewTabAdjacent=FALSE
         MiscSearchDialogOpacity=100
         MiscShowUnsafePasteDialog=TRUE
-        ColorForeground=#ffffff
-        ColorBackground=#1e1e1e
-        ColorCursor=#ffffff
+        ColorForeground=#c0caf5
+        ColorBackground=#1a1b26
+        ColorCursor=#c0caf5
+        ColorSelection=#1a1b26
+        ColorSelectionBackground=#c0caf5
         ColorBoldUseDefault=FALSE
-        TabActivityColor=#dc322f
+        ColorPalette=#15161e;#f7768e;#9ece6a;#e0af68;#7aa2f7;#bb9af7;#7dcfff;#a9b1d6;#414868;#f7768e;#9ece6a;#e0af68;#7aa2f7;#bb9af7;#7dcfff;#c0caf5
+        TabActivityColor=#f7768e
       '';
     };
   };
@@ -191,13 +194,12 @@
     Service = {
       Type = "simple";
       # Performance-optimized x11vnc flags:
-      # -ncache 10: Client-side caching for better performance
-      # -ncache_cr: Cache copyrect for window movements
       # -speeds lan: Optimize for LAN speeds
       # -threads: Enable multi-threading
       # -wireframe: Show wireframes during window moves (faster)
-      # -scrollcopyrect: Optimize scrolling
-      ExecStart = "${pkgs.x11vnc}/bin/x11vnc -display :0 -forever -shared -rfbport 5900 -ncache 10 -ncache_cr -speeds lan -threads -wireframe -scrollcopyrect";
+      # -clip 1920x1080+0+0: Clip to visible screen area
+      # Note: -ncache removed as it creates a tall virtual framebuffer that confuses some VNC clients (like Guacamole)
+      ExecStart = "${pkgs.x11vnc}/bin/x11vnc -display :0 -forever -shared -rfbport 5900 -clip 1920x1080+0+0 -speeds lan -threads -wireframe";
       Restart = "on-failure";
       RestartSec = 3;
     };
@@ -214,8 +216,8 @@
       name = "Arc-Dark";
     };
     iconTheme = {
-      package = pkgs.papirus-icon-theme;
-      name = "Papirus-Dark";
+      package = pkgs.tela-icon-theme;
+      name = "Tela-black-dark";
     };
     cursorTheme = {
       package = pkgs.bibata-cursors;
@@ -235,7 +237,7 @@
     "org/gnome/desktop/interface" = {
       color-scheme = "prefer-dark";
       gtk-theme = "Arc-Dark";
-      icon-theme = "Papirus-Dark";
+      icon-theme = "Tela-black-dark";
       cursor-theme = "Bibata-Modern-Classic";
       cursor-size = 24;
     };
