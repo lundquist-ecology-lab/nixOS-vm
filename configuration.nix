@@ -155,7 +155,7 @@
     kitty.terminfo
     neovim
     zsh
-    x11vnc  # VNC server for X11
+    tigervnc  # High-performance VNC server (x0vncserver)
 
     # Theming
     arc-theme
@@ -256,7 +256,7 @@
   services.timesyncd.enable = true;
 
   # Open ports in the firewall
-  networking.firewall.allowedTCPPorts = [ 5900 ];  # x11vnc
+  networking.firewall.allowedTCPPorts = [ 5900 ];  # x0vncserver (TigerVNC)
   # networking.firewall.allowedUDPPorts = [ ... ];
   # Or disable the firewall altogether (not recommended for production)
   # networking.firewall.enable = false;

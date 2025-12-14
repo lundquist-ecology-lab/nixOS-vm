@@ -164,7 +164,7 @@
     htop
     btop
     kitty   # Terminal emulator (GPU-accelerated, slower over VNC, kept as backup)
-    x11vnc  # VNC server for X11
+    tigervnc  # High-performance VNC server (x0vncserver for capturing GPU display)
 
     # Additional CLI tools
     glow  # Markdown viewer
@@ -184,22 +184,26 @@
     ]))
   ];
 
-  # Systemd user service for x11vnc with performance optimizations
-  systemd.user.services.x11vnc = {
+  # Systemd user service for TigerVNC x0vncserver (high-performance VNC for GPU display)
+  systemd.user.services.x0vncserver = {
     Unit = {
-      Description = "x11vnc - VNC server for X11";
+      Description = "TigerVNC x0vncserver - High-performance VNC for existing X display";
       After = [ "graphical-session.target" ];
       PartOf = [ "graphical-session.target" ];
     };
     Service = {
       Type = "simple";
-      # Performance-optimized x11vnc flags:
-      # -speeds lan: Optimize for LAN speeds
-      # -threads: Enable multi-threading
-      # -wireframe: Show wireframes during window moves (faster)
-      # -clip 1920x1080+0+0: Clip to visible screen area
-      # Note: -ncache removed as it creates a tall virtual framebuffer that confuses some VNC clients (like Guacamole)
-      ExecStart = "${pkgs.x11vnc}/bin/x11vnc -display :0 -forever -shared -rfbport 5900 -clip 1920x1080+0+0 -speeds lan -threads -wireframe";
+      # Performance-optimized x0vncserver flags:
+      # -display :0: Attach to existing GPU-rendered display
+      # -rfbport 5900: VNC port
+      # -SecurityTypes None: No authentication (use Tailscale for security)
+      # -AcceptPointerEvents: Enable mouse input
+      # -AcceptKeyEvents: Enable keyboard input
+      # -MaxProcessorUsage=100: Use full CPU for encoding
+      # -PollingCycle=10: Fast polling for responsive updates (ms)
+      # -CompareFB=2: Optimized framebuffer comparison
+      # -UseSHM: Use shared memory for better performance
+      ExecStart = "${pkgs.tigervnc}/bin/x0vncserver -display :0 -rfbport 5900 -SecurityTypes None -PollingCycle=10 -CompareFB=2 -UseSHM -MaxProcessorUsage=100";
       Restart = "on-failure";
       RestartSec = 3;
     };
