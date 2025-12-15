@@ -240,8 +240,23 @@
   # Enable Ollama
   services.ollama = {
     enable = true;
-       acceleration = "cuda"; # Use NVIDIA CUDA acceleration
-       };
+    acceleration = "cuda"; # Use NVIDIA CUDA acceleration
+  };
+
+  # Force Ollama to listen on all interfaces for Docker access
+  systemd.services.ollama.environment = {
+    OLLAMA_HOST = pkgs.lib.mkForce "0.0.0.0:11434"; # override module default
+    # Allow requests from OpenWebUI
+    OLLAMA_ORIGINS = "*";
+    # Keep only one model resident to limit RAM/VRAM pressure
+    OLLAMA_MAX_LOADED_MODELS = "1";
+  };
+
+  # Store Ollama models on the larger /onyx volume
+  fileSystems."/var/lib/ollama/models" = {
+    device = "/onyx/ollama-data/models";
+    options = [ "bind" ];
+  };
 
   # Enable Docker
   virtualisation.docker = {
@@ -256,7 +271,7 @@
   services.timesyncd.enable = true;
 
   # Open ports in the firewall
-  networking.firewall.allowedTCPPorts = [ 5900 ];  # x0vncserver (TigerVNC)
+  networking.firewall.allowedTCPPorts = [ 5900 11434 ];  # x0vncserver (TigerVNC), Ollama API
   # networking.firewall.allowedUDPPorts = [ ... ];
   # Or disable the firewall altogether (not recommended for production)
   # networking.firewall.enable = false;
