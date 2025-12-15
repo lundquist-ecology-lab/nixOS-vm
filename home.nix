@@ -84,6 +84,10 @@
 
   xdg = {
     enable = true;
+    configFile."nvim" = {
+      source = ./dotfiles/nvim;
+      recursive = true;
+    };
     configFile."oh-my-posh/kitty.omp.json" = {
       source = ./dotfiles/oh-my-posh/kitty.omp.json;
     };
