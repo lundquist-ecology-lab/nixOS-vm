@@ -1,0 +1,100 @@
+{
+  "$schema": "https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/main/themes/schema.json",
+  "version": 3,
+  "console_title_template": "{{ .Shell }} in {{ .Folder }}",
+  "final_space": true,
+  "blocks": [
+    {
+      "type": "prompt",
+      "alignment": "left",
+      "segments": [
+        {
+          "type": "session",
+          "style": "plain",
+          "background": "transparent",
+          "foreground": "#8DA3B9",
+          "template": "{{ .UserName }}@{{ .HostName }} "
+        },
+        {
+          "type": "path",
+          "style": "plain",
+          "background": "transparent",
+          "foreground": "#8AA6A2",
+          "template": "{{ .Path }} ",
+          "properties": {
+            "style": "folder",
+            "home_icon": "~",
+            "folder_separator_icon": "/"
+          }
+        },
+        {
+          "type": "git",
+          "style": "plain",
+          "background": "transparent",
+          "foreground": "#D9BC8C",
+          "foreground_templates": [
+            "{{ if or (.Working.Changed) (.Staging.Changed) }}#B66467{{ end }}",
+            "{{ if and (gt .Ahead 0) (gt .Behind 0) }}#B66467{{ end }}",
+            "{{ if gt .Ahead 0 }}#A988B0{{ end }}",
+            "{{ if gt .Behind 0 }}#A988B0{{ end }}"
+          ],
+          "template": "[{{ .HEAD }}{{ if .BranchStatus }} {{ .BranchStatus }}{{ end }}{{ if .Working.Changed }} *{{ .Working.String }}{{ end }}{{ if .Staging.Changed }} +{{ .Staging.String }}{{ end }}] ",
+          "properties": {
+            "branch_template": "{{ trunc 25 .Branch }}",
+            "fetch_status": true,
+            "fetch_upstream_icon": false
+          }
+        },
+        {
+          "type": "python",
+          "style": "plain",
+          "background": "transparent",
+          "foreground": "#D9BC8C",
+          "template": "(py:{{ .Full }}) ",
+          "properties": {
+            "display_mode": "files",
+            "fetch_virtual_env": false
+          }
+        },
+        {
+          "type": "node",
+          "style": "plain",
+          "background": "transparent",
+          "foreground": "#8C977D",
+          "template": "(node:{{ .Full }}) ",
+          "properties": {
+            "fetch_version": true
+          }
+        },
+        {
+          "type": "executiontime",
+          "style": "plain",
+          "background": "transparent",
+          "foreground": "#666666",
+          "template": "[{{ .FormattedMs }}] ",
+          "properties": {
+            "always_enabled": false,
+            "threshold": 500
+          }
+        },
+        {
+          "type": "status",
+          "style": "plain",
+          "background": "transparent",
+          "foreground": "#8AA6A2",
+          "foreground_templates": [
+            "{{ if gt .Code 0 }}#B66467{{ end }}"
+          ],
+          "template": "{{ if gt .Code 0 }}[x{{ .Code }}] {{ end }}"
+        },
+        {
+          "type": "text",
+          "style": "plain",
+          "background": "transparent",
+          "foreground": "#E8E3E3",
+          "template": "$ "
+        }
+      ]
+    }
+  ]
+}

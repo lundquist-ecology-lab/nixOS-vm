@@ -7,7 +7,7 @@
   home.sessionVariables = {
     EDITOR = "nvim";
     VISUAL = "nvim";
-    TERMINAL = "xfce4-terminal";
+    TERMINAL = "mate-terminal";
   };
 
   home.sessionPath = [
@@ -43,7 +43,7 @@
 
         # Aliases
         alias zshconfig="nvim ~/.zshrc"
-        alias term="xfce4-terminal"
+        alias term="mate-terminal"
         alias onyx="cd /onyx"
         alias peppy="cd /peppy"
         setopt NO_BEEP
@@ -51,8 +51,12 @@
         export VISUAL="nvim"
         export EDITOR="nvim"
 
-        # Oh My Posh prompt
-        eval "$(oh-my-posh init zsh --config ${config.xdg.configHome}/oh-my-posh/kitty.omp.json)"
+        # Oh My Posh prompt - use minimal theme for SSH/Guacamole sessions
+        if [[ -n "$SSH_TTY" || -n "$SSH_CONNECTION" ]]; then
+          eval "$(oh-my-posh init zsh --config ${config.xdg.configHome}/oh-my-posh/minimal.omp.json)"
+        else
+          eval "$(oh-my-posh init zsh --config ${config.xdg.configHome}/oh-my-posh/kitty.omp.json)"
+        fi
 
         # Enable Oh My Posh autoupgrade
         oh-my-posh enable autoupgrade &>/dev/null || true
@@ -91,70 +95,8 @@
     configFile."oh-my-posh/kitty.omp.json" = {
       source = ./dotfiles/oh-my-posh/kitty.omp.json;
     };
-    configFile."xfce4/terminal/terminalrc" = {
-      text = ''
-        [Configuration]
-        FontName=JetBrainsMono Nerd Font 11
-        MiscAlwaysShowTabs=FALSE
-        MiscBell=FALSE
-        MiscBellUrgent=FALSE
-        MiscBordersDefault=TRUE
-        MiscCursorBlinks=FALSE
-        MiscCursorShape=TERMINAL_CURSOR_SHAPE_BLOCK
-        MiscDefaultGeometry=100x30
-        MiscInheritGeometry=FALSE
-        MiscMenubarDefault=FALSE
-        MiscMouseAutohide=FALSE
-        MiscMouseWheelZoom=TRUE
-        MiscToolbarDefault=FALSE
-        MiscConfirmClose=TRUE
-        MiscCycleTabs=TRUE
-        MiscTabCloseButtons=TRUE
-        MiscTabCloseMiddleClick=TRUE
-        MiscTabPosition=GTK_POS_TOP
-        MiscHighlightUrls=TRUE
-        MiscMiddleClickOpensUri=FALSE
-        MiscCopyOnSelect=TRUE
-        MiscShowRelaunchDialog=TRUE
-        MiscRewrapOnResize=TRUE
-        MiscUseShiftArrowsToScroll=FALSE
-        MiscSlimTabs=FALSE
-        MiscNewTabAdjacent=FALSE
-        MiscSearchDialogOpacity=100
-        MiscShowUnsafePasteDialog=TRUE
-        ColorForeground=#c0caf5
-        ColorBackground=#1a1b26
-        ColorCursor=#c0caf5
-        ColorSelection=#1a1b26
-        ColorSelectionBackground=#c0caf5
-        ColorBoldUseDefault=FALSE
-        ColorPalette=#15161e;#f7768e;#9ece6a;#e0af68;#7aa2f7;#bb9af7;#7dcfff;#a9b1d6;#414868;#f7768e;#9ece6a;#e0af68;#7aa2f7;#bb9af7;#7dcfff;#c0caf5
-        TabActivityColor=#f7768e
-      '';
-    };
-  };
-
-  # Set XFCE default terminal to xfce4-terminal
-  xfconf.settings = {
-    xfce4-keyboard-shortcuts = {
-      "commands/default/<Super>t" = "xfce4-terminal";
-      "commands/custom/<Primary><Alt>t" = "xfce4-terminal";
-    };
-
-    # Performance optimizations for VNC
-    xfwm4 = {
-      "general/use_compositing" = false;  # Disable compositor for VNC
-      "general/vblank_mode" = "off";
-      "general/frame_opacity" = 100;
-      "general/inactive_opacity" = 100;
-      "general/show_frame_shadow" = false;
-      "general/show_popup_shadow" = false;
-    };
-
-    xsettings = {
-      "Gtk/EnableAnimations" = false;  # Disable animations
-      "Gtk/CursorThemeName" = "Bibata-Modern-Classic";
-      "Gtk/CursorThemeSize" = 24;
+    configFile."oh-my-posh/minimal.omp.json" = {
+      source = ./dotfiles/oh-my-posh/minimal.omp.json;
     };
   };
 
@@ -165,6 +107,7 @@
     fd
     jq
     yq
+    yarn
     htop
     btop
     kitty   # Terminal emulator (GPU-accelerated, slower over VNC, kept as backup)
@@ -248,6 +191,16 @@
       icon-theme = "Tela-black-dark";
       cursor-theme = "Bibata-Modern-Classic";
       cursor-size = 24;
+    };
+    "org/mate/desktop/interface" = {
+      enable-animations = false;
+      gtk-theme = "Arc-Dark";
+      icon-theme = "Tela-black-dark";
+      cursor-theme = "Bibata-Modern-Classic";
+      cursor-size = 24;
+    };
+    "org/mate/Marco/general" = {
+      compositing-manager = false;  # Disable compositor for smoother VNC
     };
   };
 

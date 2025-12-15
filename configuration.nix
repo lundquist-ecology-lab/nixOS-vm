@@ -113,9 +113,6 @@
     '';
   };
 
-  # Disable XFCE compositor system-wide for VNC performance
-  services.xserver.desktopManager.xfce.enableXfwm = true;
-
   # Performance optimizations for VM
   services.journald.extraConfig = ''
     SystemMaxUse=100M
