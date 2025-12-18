@@ -149,13 +149,12 @@ require("lazy").setup({
       require('Comment').setup()
     end,
   },
+  -- LSP Configuration (servers installed via Nix packages, not Mason)
   {
-    'williamboman/mason.nvim',
+    'neovim/nvim-lspconfig',
     event = "BufReadPre",
     dependencies = {
       'hrsh7th/cmp-nvim-lsp',
-      'neovim/nvim-lspconfig',
-      'williamboman/mason-lspconfig.nvim',
     },
     config = function()
       require('plugins.lsp')

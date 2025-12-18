@@ -1,7 +1,5 @@
-local ok, mason = pcall(require, 'mason')
-if not ok then
-  return
-end
+-- LSP Configuration for NixOS
+-- All LSP servers are installed via Nix packages (Mason doesn't work well on NixOS due to FHS)
 
 -- Suppress texlab exit code 127 errors (common on SMB shares)
 local original_notify = vim.notify
@@ -16,18 +14,8 @@ end
 local capabilities = vim.lsp.protocol.make_client_capabilities()
 capabilities = require('cmp_nvim_lsp').default_capabilities(capabilities)
 
-mason.setup {
-  ui = {
-    icons = {
-      server_installed = "✓",
-      server_pending = "➜",
-      server_uninstalled = "✗"
-    }
-  }
-}
-
--- Servers managed by Mason
-local mason_servers = {
+-- All servers provided by NixOS packages (installed in home.nix)
+local servers = {
   "lua_ls",
   "pyright",
   "denols",
@@ -43,29 +31,13 @@ local mason_servers = {
   "taplo",
   "dockerls",
   "docker_compose_language_service",
-}
-
--- Servers provided by NixOS (not installed via Mason)
-local nixos_servers = {
   "texlab",
   "marksman",
   "ltex",
 }
 
-require('mason-lspconfig').setup {
-  ensure_installed = mason_servers,
-  automatic_installation = true,
-}
-
--- Configure Mason-managed servers
-for _, server in ipairs(mason_servers) do
-  vim.lsp.config(server, {
-    capabilities = capabilities,
-  })
-end
-
--- Configure NixOS-provided servers
-for _, server in ipairs(nixos_servers) do
+-- Configure all NixOS-provided servers
+for _, server in ipairs(servers) do
   vim.lsp.config(server, {
     capabilities = capabilities,
   })

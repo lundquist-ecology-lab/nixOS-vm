@@ -117,6 +117,24 @@
     glow  # Markdown viewer
     gh    # GitHub CLI
 
+    # LSP servers (NixOS-provided instead of Mason due to FHS incompatibility)
+    lua-language-server
+    pyright
+    deno  # provides denols
+    nodePackages.typescript-language-server
+    nodePackages.vscode-langservers-extracted  # html, css, json, eslint
+    yaml-language-server
+    nodePackages.bash-language-server
+    clang-tools  # provides clangd
+    rust-analyzer
+    gopls
+    taplo
+    nodePackages.dockerfile-language-server-nodejs
+    docker-compose-language-service
+    texlab
+    marksman
+    ltex-ls
+
     # Python packages (integrated)
     (python311.withPackages (ps: with ps; [
       gdal

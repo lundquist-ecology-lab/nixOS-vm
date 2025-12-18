@@ -233,6 +233,146 @@ tex.matrix = s("matrix", fmta(
   }
 ))
 
+-- Letter template with MMC letterhead and signature
+tex.letter = s("letter", fmta(
+  [[
+    \documentclass[12pt]{article}
+    \usepackage[utf8]{inputenc}
+    \usepackage[T1]{fontenc}
+    \usepackage{mathptmx} % Times New Roman
+    \usepackage{graphicx}
+    \usepackage{geometry}
+    \usepackage{eso-pic}
+    \usepackage{xcolor}
+    \usepackage{hyperref}
+
+    % Page geometry
+    \geometry{
+      top=2in,
+      bottom=1in,
+      left=1in,
+      right=1in
+    }
+
+    % Letterhead background (first page only)
+    \newcommand{\letterhead}{%
+      \AddToShipoutPictureBG*{%
+        \AtPageUpperLeft{%
+          \raisebox{-\height}{\includegraphics[width=\paperwidth]{<>}}%
+        }%
+      }%
+    }
+
+    % Remove paragraph indentation for letters
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{12pt}
+
+    \begin{document}
+    \letterhead
+    \pagestyle{empty}
+
+    % Date
+    \today
+
+    \vspace{24pt}
+
+    % Recipient
+    <>\\
+    <>\\
+    <>
+
+    \vspace{12pt}
+
+    % Salutation
+    Dear <>:
+
+    \vspace{12pt}
+
+    % Body
+    <>
+
+    \vspace{24pt}
+
+    % Closing
+    <>,
+
+    \vspace{12pt}
+
+    % Signature image
+    \includegraphics[height=1in]{<>}
+
+    \vspace{-6pt}
+
+    % Typed name and title
+    <>\\
+    <>
+
+    \end{document}
+  ]],
+  {
+    i(1, "/peppy/mmc/archive/professional/letters/mmc.png"),
+    i(2, "Recipient Name"),
+    i(3, "Organization"),
+    i(4, "Address, City, State ZIP"),
+    i(5, "Recipient First Name"),
+    i(6, "Letter body text here."),
+    c(7, {t("Sincerely"), t("Best regards"), t("Respectfully"), t("Warm regards")}),
+    i(8, "/peppy/mmc/archive/professional/letters/signature.jpg"),
+    i(9, "Matthew Lundquist, PhD"),
+    i(10, "Title"),
+  }
+))
+
+-- Simple letter without letterhead background (for quick letters)
+tex.lettersimple = s("lettersimple", fmta(
+  [[
+    \documentclass[12pt]{article}
+    \usepackage[utf8]{inputenc}
+    \usepackage[T1]{fontenc}
+    \usepackage{mathptmx} % Times New Roman
+    \usepackage{graphicx}
+    \usepackage{geometry}
+
+    \geometry{margin=1in}
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{12pt}
+
+    \begin{document}
+    \pagestyle{empty}
+
+    \today
+
+    \vspace{24pt}
+
+    <>\\
+    <>
+
+    \vspace{12pt}
+
+    Dear <>:
+
+    <>
+
+    \vspace{24pt}
+
+    <>,
+
+    \vspace{48pt}
+
+    <>
+
+    \end{document}
+  ]],
+  {
+    i(1, "Recipient Name"),
+    i(2, "Address"),
+    i(3, "Recipient"),
+    i(4, "Letter body."),
+    c(5, {t("Sincerely"), t("Best regards"), t("Respectfully")}),
+    i(0, "Your Name"),
+  }
+))
+
 -- Add all LaTeX snippets
 ls.add_snippets("tex", vim.tbl_values(tex))
 
