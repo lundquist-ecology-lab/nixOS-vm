@@ -137,15 +137,37 @@
 
     # Python packages (integrated)
     (python311.withPackages (ps: with ps; [
-      gdal
-      pillow
+      # Core
       pip
       poetry-core
       pynvim
+
+      # Geospatial analysis
+      geopandas
+      rasterio
+      shapely
+      pyproj
+      gdal
+
+      # Scientific computing
+      numpy
+      pandas
+      scipy
+      scikit-image
+      matplotlib
       seaborn
       statsmodels
+      pillow
+
+      # Utilities
+      tqdm
       pandocfilters
       panflute
+
+      # Jupyter
+      jupyter
+      ipykernel
+      notebook
     ]))
   ];
 
