@@ -1,0 +1,89 @@
+# Kitty theme for btop
+# Matches the kitty.omp.json oh-my-posh color palette
+
+# Main background and foreground
+theme[main_bg]="#151515"
+theme[main_fg]="#E8E3E3"
+
+# Title color for boxes
+theme[title]="#E8E3E3"
+
+# Highlight color for keyboard shortcuts
+theme[hi_fg]="#8DA3B9"
+
+# Background color of selected items
+theme[selected_bg]="#424242"
+
+# Foreground color of selected items
+theme[selected_fg]="#E8E3E3"
+
+# Color of inactive/disabled text
+theme[inactive_fg]="#636363"
+
+# Color of text appearing on top of graphs
+theme[graph_text]="#E8E3E3"
+
+# Misc colors for processes box
+theme[proc_misc]="#8AA6A2"
+
+# CPU box outline color
+theme[cpu_box]="#8DA3B9"
+
+# Memory/Disk box outline color
+theme[mem_box]="#8AA6A2"
+
+# Net box outline color
+theme[net_box]="#D9BC8C"
+
+# Processes box outline color
+theme[proc_box]="#A988B0"
+
+# Box divider line and target graph line color
+theme[div_line]="#424242"
+
+# Temperature graph color (uses 3 colors)
+theme[temp_start]="#8C977D"
+theme[temp_mid]="#D9BC8C"
+theme[temp_end]="#B66467"
+
+# CPU graph colors (uses 4 colors)
+theme[cpu_start]="#8AA6A2"
+theme[cpu_mid]="#8DA3B9"
+theme[cpu_end]="#A988B0"
+
+# Memory graph colors (uses 4 colors)
+theme[mem_start]="#8AA6A2"
+theme[mem_mid]="#8C977D"
+theme[mem_end]="#D9BC8C"
+
+# Network graph colors (uses 4 colors)
+theme[download_start]="#8DA3B9"
+theme[download_mid]="#8AA6A2"
+theme[download_end]="#8C977D"
+
+theme[upload_start]="#A988B0"
+theme[upload_mid]="#D9BC8C"
+theme[upload_end]="#B66467"
+
+# Process box gradient for threads, memory and CPU usage
+theme[process_start]="#8AA6A2"
+theme[process_mid]="#D9BC8C"
+theme[process_end]="#B66467"
+
+# Free and cached memory colors
+theme[free_start]="#8C977D"
+theme[free_mid]="#8AA6A2"
+theme[free_end]="#8DA3B9"
+
+theme[cached_start]="#A988B0"
+theme[cached_mid]="#D9BC8C"
+theme[cached_end]="#B66467"
+
+# Available and used memory colors
+theme[available_start]="#8C977D"
+theme[available_mid]="#8AA6A2"
+theme[available_end]="#8DA3B9"
+
+theme[used_start]="#D9BC8C"
+theme[used_mid]="#B66467"
+theme[used_end]="#B66467"

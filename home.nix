@@ -84,6 +84,15 @@
       vimAlias = true;
       defaultEditor = true;
     };
+
+    btop = {
+      enable = true;
+      settings = {
+        color_theme = "kitty";
+        theme_background = false;  # Use terminal background
+        vim_keys = true;
+      };
+    };
   };
 
   xdg = {
@@ -98,6 +107,9 @@
     configFile."oh-my-posh/minimal.omp.json" = {
       source = ./dotfiles/oh-my-posh/minimal.omp.json;
     };
+    configFile."btop/themes/kitty.theme" = {
+      source = ./dotfiles/btop/themes/kitty.theme;
+    };
   };
 
   home.packages = with pkgs; [
@@ -109,7 +121,6 @@
     yq
     yarn
     htop
-    btop
     kitty   # Terminal emulator (GPU-accelerated, slower over VNC, kept as backup)
     tigervnc  # High-performance VNC server (x0vncserver for capturing GPU display)
 
@@ -136,7 +147,7 @@
     ltex-ls
 
     # Python packages (integrated)
-    (python311.withPackages (ps: with ps; [
+    (python312.withPackages (ps: with ps; [
       # Core
       pip
       poetry-core
