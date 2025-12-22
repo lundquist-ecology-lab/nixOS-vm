@@ -123,17 +123,21 @@
             };
             models = {
               # Recommended agentic models with working tool calling
+              "llama3.1:8b" = {
+                name = "Llama 3.1 8B (Best for limited VRAM)";
+                tools = true;  # Only needs ~5GB VRAM
+              };
               "devstral:24b" = {
                 name = "Devstral 24B (4K - no tools)";
                 tools = false;  # Default 4K context too small
               };
-              "devstral:24b-32k" = {
-                name = "Devstral 24B (32K)";
-                tools = true;  # Requires 32K context for tools
+              "devstral:24b-16k" = {
+                name = "Devstral 24B (16K - needs 16GB VRAM)";
+                tools = true;  # 16K context, less memory than 32K
               };
-              "llama3.1:8b" = {
-                name = "Llama 3.1 8B (Fast & Reliable)";
-                tools = true;
+              "devstral:24b-32k" = {
+                name = "Devstral 24B (32K - needs 24GB VRAM)";
+                tools = true;  # Requires RTX 4090 or better
               };
               "llama3.1:70b" = {
                 name = "Llama 3.1 70B (Most Capable)";
@@ -159,7 +163,7 @@
             };
           };
         };
-        model = "ollama/devstral:24b-32k";  # Default: 32K context for tool support
+        model = "ollama/llama3.1:8b";  # Default: works on any GPU with tools
       };
     };
   };
