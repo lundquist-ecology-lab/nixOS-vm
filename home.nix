@@ -122,25 +122,44 @@
               baseURL = "http://localhost:11434/v1";
             };
             models = {
-              "deepseek-r1:latest" = {
-                name = "DeepSeek R1 (no tools)";
+              # Recommended agentic models with working tool calling
+              "devstral:24b" = {
+                name = "Devstral 24B (4K - no tools)";
+                tools = false;  # Default 4K context too small
               };
-              "qwen3-coder:30b" = {
-                name = "Qwen3 Coder 30B (8K) - broken tools";
-                tools = false;  # Tool calling broken in Ollama
+              "devstral:24b-32k" = {
+                name = "Devstral 24B (32K)";
+                tools = true;  # Requires 32K context for tools
+              };
+              "llama3.1:8b" = {
+                name = "Llama 3.1 8B (Fast & Reliable)";
+                tools = true;
+              };
+              "llama3.1:70b" = {
+                name = "Llama 3.1 70B (Most Capable)";
+                tools = true;
+              };
+              "arcee-agent" = {
+                name = "Arcee Agent 7B (Efficient)";
+                tools = true;
+              };
+              "dolphin-llama3:8b" = {
+                name = "Dolphin 3.0 Llama 3.1 8B (General)";
+                tools = true;
+              };
+              # Models without tool support
+              "deepseek-r1:latest" = {
+                name = "DeepSeek R1 (Reasoning only)";
+                tools = false;
               };
               "qwen3-coder:30b-32k" = {
-                name = "Qwen3 Coder 30B (32K) - broken tools";
-                tools = false;  # Tool calling broken in Ollama
-              };
-              "devstral:24b" = {
-                name = "Devstral 24B";
-                tools = true;  # Reliable tool calling in Ollama
+                name = "Qwen3 Coder 30B (Broken tools)";
+                tools = false;
               };
             };
           };
         };
-        model = "ollama/devstral:24b";  # Default: best tool calling support
+        model = "ollama/devstral:24b-32k";  # Default: 32K context for tool support
       };
     };
   };
