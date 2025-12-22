@@ -27,7 +27,7 @@ return {
 
   ---@type Ollama.Config
   opts = {
-    -- your configuration overrides
+    url = "http://localhost:11434",  -- Local Ollama server in VM
   }
 }
 

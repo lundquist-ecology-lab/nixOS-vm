@@ -110,6 +110,39 @@
     configFile."btop/themes/kitty.theme" = {
       source = ./dotfiles/btop/themes/kitty.theme;
     };
+    # OpenCode configuration for Ollama (localhost for VM)
+    configFile."opencode/opencode.json" = {
+      text = builtins.toJSON {
+        "$schema" = "https://opencode.ai/config.json";
+        provider = {
+          ollama = {
+            npm = "@ai-sdk/openai-compatible";
+            name = "Ollama (local)";
+            options = {
+              baseURL = "http://localhost:11434/v1";
+            };
+            models = {
+              "deepseek-r1:latest" = {
+                name = "DeepSeek R1 (no tools)";
+              };
+              "qwen3-coder:30b" = {
+                name = "Qwen3 Coder 30B (8K) - broken tools";
+                tools = false;  # Tool calling broken in Ollama
+              };
+              "qwen3-coder:30b-32k" = {
+                name = "Qwen3 Coder 30B (32K) - broken tools";
+                tools = false;  # Tool calling broken in Ollama
+              };
+              "devstral:24b" = {
+                name = "Devstral 24B";
+                tools = true;  # Reliable tool calling in Ollama
+              };
+            };
+          };
+        };
+        model = "ollama/devstral:24b";  # Default: best tool calling support
+      };
+    };
   };
 
   home.packages = with pkgs; [
