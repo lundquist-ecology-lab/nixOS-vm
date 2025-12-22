@@ -124,8 +124,12 @@
             models = {
               # Recommended agentic models with working tool calling
               "llama3.1:8b" = {
-                name = "Llama 3.1 8B (Best for limited VRAM)";
-                tools = true;  # Only needs ~5GB VRAM
+                name = "Llama 3.1 8B (4K - no tools)";
+                tools = false;  # Default 4K context too small
+              };
+              "llama3.1:8b-32k" = {
+                name = "Llama 3.1 8B (32K)";
+                tools = true;  # 32K context for tool calling
               };
               "devstral:24b" = {
                 name = "Devstral 24B (4K - no tools)";
@@ -163,7 +167,7 @@
             };
           };
         };
-        model = "ollama/llama3.1:8b";  # Default: works on any GPU with tools
+        model = "ollama/llama3.1:8b-32k";  # Default: 32K context for tools
       };
     };
   };
