@@ -3,7 +3,7 @@
 # your system. Help is available in the configuration.nix(5) man page
 # and in the NixOS manual (accessible by running 'nixos-help').
 
-{ config, pkgs, ... }:
+{ config, pkgs, unstablePkgs, ... }:
 
 {
   imports = [ ./hardware-configuration.nix ];
@@ -148,7 +148,7 @@
     git
     htop
     tailscale
-    ollama
+    unstablePkgs.ollama  # Use latest version from unstable for newer models
     kitty.terminfo
     neovim
     zsh
@@ -238,6 +238,7 @@
   services.ollama = {
     enable = true;
     acceleration = "cuda"; # Use NVIDIA CUDA acceleration
+    package = unstablePkgs.ollama; # Use latest version for devstral-small-2 support
   };
 
   # Force Ollama to listen on all interfaces for Docker access
