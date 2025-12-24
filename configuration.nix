@@ -262,9 +262,11 @@
     wantedBy = [ "multi-user.target" ];
 
     environment = {
+      HOME = "/var/lib/vllm";
       CUDA_VISIBLE_DEVICES = "0";
       VLLM_WORKER_MULTIPROC_METHOD = "spawn";
       HF_HOME = "/var/lib/vllm/cache";
+      LD_LIBRARY_PATH = "${pkgs.lib.makeLibraryPath [ config.hardware.nvidia.package ]}";
     };
 
     serviceConfig = {
@@ -273,6 +275,8 @@
       Group = "vllm";
       StateDirectory = "vllm";
       CacheDirectory = "vllm";
+      SupplementaryGroups = [ "video" "render" ];
+      DeviceAllow = [ "/dev/nvidia0" "/dev/nvidiactl" "/dev/nvidia-uvm" ];
       ExecStart = ''
         ${unstablePkgs.python3.withPackages (ps: with ps; [ vllm ])}/bin/python -m vllm.entrypoints.openai.api_server \
           --host 0.0.0.0 \
@@ -293,7 +297,9 @@
   users.users.vllm = {
     isSystemUser = true;
     group = "vllm";
-    extraGroups = [ "video" ];  # Access to GPU
+    home = "/var/lib/vllm";
+    createHome = true;
+    extraGroups = [ "video" "render" ];  # Access to GPU
   };
 
   users.groups.vllm = {};
