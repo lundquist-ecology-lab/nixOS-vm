@@ -306,10 +306,11 @@
         /var/lib/vllm/venv/bin/python -m vllm.entrypoints.openai.api_server \
           --host 0.0.0.0 \
           --port 8000 \
-          --model /var/lib/vllm/models/qwen/Qwen3-14B \
+          --model /var/lib/vllm/models/qwen/Qwen3-14B-AWQ \
+          --quantization awq \
           --dtype auto \
           --max-model-len 32768 \
-          --gpu-memory-utilization 0.4 \
+          --gpu-memory-utilization 0.9 \
           --enable-auto-tool-choice \
           --tool-call-parser hermes
       '';
