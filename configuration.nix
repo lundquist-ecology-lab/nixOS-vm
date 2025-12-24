@@ -285,12 +285,19 @@
         export LD_LIBRARY_PATH=/run/opengl-driver/lib:$LD_LIBRARY_PATH
         export CUDA_HOME=/run/opengl-driver
 
+        # Create venv if it doesn't exist
         if [ ! -d /var/lib/vllm/venv ]; then
           ${pkgs.python3}/bin/python3 -m venv /var/lib/vllm/venv
           /var/lib/vllm/venv/bin/pip install --upgrade pip
-          # Install PyTorch with CUDA 12.1 support explicitly
+        fi
+
+        # Install PyTorch if not already installed
+        if ! /var/lib/vllm/venv/bin/python -c "import torch" 2>/dev/null; then
           /var/lib/vllm/venv/bin/pip install torch --index-url https://download.pytorch.org/whl/cu121
-          # Then install vLLM
+        fi
+
+        # Install vLLM if not already installed
+        if ! /var/lib/vllm/venv/bin/python -c "import vllm" 2>/dev/null; then
           /var/lib/vllm/venv/bin/pip install vllm huggingface-hub
         fi
       '';
