@@ -266,6 +266,8 @@
       HOME = "/var/lib/vllm";
       CUDA_VISIBLE_DEVICES = "0";
       VLLM_WORKER_MULTIPROC_METHOD = "spawn";
+      VLLM_USE_V1 = "0";
+      VLLM_ALLOW_RUNTIME_LORA_UPDATING = "false";
       HF_HOME = "/var/lib/vllm/cache";
       LD_LIBRARY_PATH = "${pkgs.lib.makeLibraryPath [ pkgs.stdenv.cc.cc.lib pkgs.zlib ]}:/run/opengl-driver/lib";
     };
@@ -313,7 +315,7 @@
           --gpu-memory-utilization 0.9 \
           --enable-auto-tool-choice \
           --tool-call-parser hermes \
-          --disable-cuda-graph
+          --enforce-eager
       '';
       Restart = "on-failure";
       RestartSec = "10s";
