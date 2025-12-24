@@ -150,8 +150,7 @@
     tailscale
     (unstablePkgs.ollama.override { acceleration = "cuda"; })  # Use latest version with CUDA
     (unstablePkgs.python3.withPackages (ps: with ps; [
-      vllm
-      torch-bin  # Use pre-built torch with CUDA support
+      vllm  # Includes torch with CUDA support
       huggingface-hub  # HuggingFace model downloader
     ]))
     kitty.terminfo
@@ -275,7 +274,7 @@
       StateDirectory = "vllm";
       CacheDirectory = "vllm";
       ExecStart = ''
-        ${unstablePkgs.python3.withPackages (ps: with ps; [ vllm torch-bin ])}/bin/python -m vllm.entrypoints.openai.api_server \
+        ${unstablePkgs.python3.withPackages (ps: with ps; [ vllm ])}/bin/python -m vllm.entrypoints.openai.api_server \
           --host 0.0.0.0 \
           --port 8000 \
           --model /var/lib/vllm/models/qwen/Qwen3-14B \
