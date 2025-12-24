@@ -282,6 +282,7 @@
           --host 0.0.0.0 \
           --port 8000 \
           --model /var/lib/vllm/models/qwen/Qwen3-14B \
+          --device cuda \
           --dtype auto \
           --max-model-len 32768 \
           --gpu-memory-utilization 0.9 \
