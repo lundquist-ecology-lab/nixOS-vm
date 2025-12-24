@@ -312,7 +312,8 @@
           --max-model-len 32768 \
           --gpu-memory-utilization 0.9 \
           --enable-auto-tool-choice \
-          --tool-call-parser hermes
+          --tool-call-parser hermes \
+          --disable-cuda-graph
       '';
       Restart = "on-failure";
       RestartSec = "10s";
