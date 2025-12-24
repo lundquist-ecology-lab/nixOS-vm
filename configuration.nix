@@ -148,7 +148,7 @@
     git
     htop
     tailscale
-    unstablePkgs.ollama  # Use latest version from unstable for newer models
+    (unstablePkgs.ollama.override { acceleration = "cuda"; })  # Use latest version with CUDA
     kitty.terminfo
     neovim
     zsh
@@ -238,7 +238,7 @@
   services.ollama = {
     enable = true;
     acceleration = "cuda"; # Use NVIDIA CUDA acceleration
-    package = unstablePkgs.ollama; # Use latest version for devstral-small-2 support
+    package = unstablePkgs.ollama.override { acceleration = "cuda"; }; # Use latest version with CUDA
   };
 
   # Force Ollama to listen on all interfaces for Docker access
@@ -253,7 +253,7 @@
   # Store Ollama models on the larger /onyx volume
   fileSystems."/var/lib/ollama/models" = {
     device = "/onyx/ollama-data/models";
-    options = [ "bind" ];
+    options = [ "bind" "nofail" "x-systemd.requires=onyx.mount" "x-systemd.after=onyx.mount" ];
   };
 
   # Enable Docker
