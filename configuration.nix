@@ -149,6 +149,10 @@
     htop
     tailscale
     (unstablePkgs.ollama.override { acceleration = "cuda"; })  # Use latest version with CUDA
+    (unstablePkgs.python3.withPackages (ps: with ps; [
+      vllm
+      torch-bin  # Use pre-built torch with CUDA support
+    ]))
     kitty.terminfo
     neovim
     zsh
@@ -250,6 +254,47 @@
     OLLAMA_MAX_LOADED_MODELS = "1";
   };
 
+  # vLLM service for better tool calling and agentic workflows
+  systemd.services.vllm = {
+    description = "vLLM OpenAI-compatible API server";
+    after = [ "network.target" ];
+    wantedBy = [ "multi-user.target" ];
+
+    environment = {
+      CUDA_VISIBLE_DEVICES = "0";
+      VLLM_WORKER_MULTIPROC_METHOD = "spawn";
+    };
+
+    serviceConfig = {
+      Type = "simple";
+      User = "vllm";
+      Group = "vllm";
+      StateDirectory = "vllm";
+      ExecStart = ''
+        ${unstablePkgs.python3.withPackages (ps: with ps; [ vllm torch-bin ])}/bin/python -m vllm.entrypoints.openai.api_server \
+          --host 0.0.0.0 \
+          --port 8000 \
+          --model qwen/Qwen3-14B \
+          --dtype auto \
+          --max-model-len 32768 \
+          --gpu-memory-utilization 0.9 \
+          --enable-auto-tool-choice \
+          --tool-call-parser hermes
+      '';
+      Restart = "on-failure";
+      RestartSec = "10s";
+    };
+  };
+
+  # Create vllm user
+  users.users.vllm = {
+    isSystemUser = true;
+    group = "vllm";
+    extraGroups = [ "video" ];  # Access to GPU
+  };
+
+  users.groups.vllm = {};
+
   # Store Ollama models on the larger /onyx volume
   fileSystems."/var/lib/ollama/models" = {
     device = "/onyx/ollama-data/models";
@@ -269,7 +314,7 @@
   services.timesyncd.enable = true;
 
   # Open ports in the firewall
-  networking.firewall.allowedTCPPorts = [ 5900 11434 ];  # x0vncserver (TigerVNC), Ollama API
+  networking.firewall.allowedTCPPorts = [ 5900 11434 8000 ];  # x0vncserver (TigerVNC), Ollama API, vLLM API
   # networking.firewall.allowedUDPPorts = [ ... ];
   # Or disable the firewall altogether (not recommended for production)
   # networking.firewall.enable = false;
