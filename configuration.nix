@@ -152,6 +152,7 @@
     (unstablePkgs.python3.withPackages (ps: with ps; [
       vllm
       torch-bin  # Use pre-built torch with CUDA support
+      huggingface-hub  # HuggingFace model downloader
     ]))
     kitty.terminfo
     neovim
