@@ -265,8 +265,10 @@
       HOME = "/var/lib/vllm";
       CUDA_VISIBLE_DEVICES = "0";
       VLLM_WORKER_MULTIPROC_METHOD = "spawn";
+      VLLM_USE_V1 = "0";
       HF_HOME = "/var/lib/vllm/cache";
-      LD_LIBRARY_PATH = "${pkgs.lib.makeLibraryPath [ config.hardware.nvidia.package ]}";
+      LD_LIBRARY_PATH = "${pkgs.lib.makeLibraryPath [ config.hardware.nvidia.package ]}:/run/opengl-driver/lib";
+      CUDA_HOME = "${config.hardware.nvidia.package}";
     };
 
     serviceConfig = {
@@ -282,7 +284,6 @@
           --host 0.0.0.0 \
           --port 8000 \
           --model /var/lib/vllm/models/qwen/Qwen3-14B \
-          --device cuda \
           --dtype auto \
           --max-model-len 32768 \
           --gpu-memory-utilization 0.9 \
