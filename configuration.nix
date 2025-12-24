@@ -237,9 +237,9 @@
   # Enable Tailscale
   services.tailscale.enable = true;
   
-  # Enable Ollama
+  # Disable Ollama (using vLLM instead for better tool calling)
   services.ollama = {
-    enable = true;
+    enable = false;
     acceleration = "cuda"; # Use NVIDIA CUDA acceleration
     package = unstablePkgs.ollama.override { acceleration = "cuda"; }; # Use latest version with CUDA
   };
@@ -309,10 +309,10 @@
           --host 0.0.0.0 \
           --port 8000 \
           --model /var/lib/vllm/models/qwen/Qwen3-14B-AWQ \
-          --quantization awq \
+          --quantization awq_marlin \
           --dtype auto \
-          --max-model-len 16384 \
-          --gpu-memory-utilization 0.9 \
+          --max-model-len 32768 \
+          --gpu-memory-utilization 0.95 \
           --enable-auto-tool-choice \
           --tool-call-parser hermes \
           --enforce-eager
