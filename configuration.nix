@@ -311,10 +311,11 @@
           --model /var/lib/vllm/models/qwen/Qwen3-14B-AWQ \
           --quantization awq_marlin \
           --dtype auto \
-          --max-model-len 32768 \
-          --gpu-memory-utilization 0.90 \
+          --max-model-len 20480 \
+          --gpu-memory-utilization 0.95 \
           --enable-auto-tool-choice \
-          --tool-call-parser hermes
+          --tool-call-parser hermes \
+          --enforce-eager
       '';
       Restart = "on-failure";
       RestartSec = "10s";
