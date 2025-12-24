@@ -309,7 +309,7 @@
           --model /var/lib/vllm/models/qwen/Qwen3-14B \
           --dtype auto \
           --max-model-len 32768 \
-          --gpu-memory-utilization 0.9 \
+          --gpu-memory-utilization 0.4 \
           --enable-auto-tool-choice \
           --tool-call-parser hermes
       '';
