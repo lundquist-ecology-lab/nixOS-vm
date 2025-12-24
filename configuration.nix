@@ -278,6 +278,7 @@
       CacheDirectory = "vllm";
       WorkingDirectory = "/var/lib/vllm";
       SupplementaryGroups = [ "video" "render" ];
+      TimeoutStartSec = "20min";
 
       ExecStartPre = pkgs.writeShellScript "vllm-setup" ''
         set -e
