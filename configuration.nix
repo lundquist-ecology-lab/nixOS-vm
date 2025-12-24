@@ -257,12 +257,14 @@
   # vLLM service for better tool calling and agentic workflows
   systemd.services.vllm = {
     description = "vLLM OpenAI-compatible API server";
-    after = [ "network.target" ];
+    after = [ "network.target" "var-lib-vllm-models.mount" ];
+    requires = [ "var-lib-vllm-models.mount" ];
     wantedBy = [ "multi-user.target" ];
 
     environment = {
       CUDA_VISIBLE_DEVICES = "0";
       VLLM_WORKER_MULTIPROC_METHOD = "spawn";
+      HF_HOME = "/var/lib/vllm/cache";
     };
 
     serviceConfig = {
@@ -270,11 +272,12 @@
       User = "vllm";
       Group = "vllm";
       StateDirectory = "vllm";
+      CacheDirectory = "vllm";
       ExecStart = ''
         ${unstablePkgs.python3.withPackages (ps: with ps; [ vllm torch-bin ])}/bin/python -m vllm.entrypoints.openai.api_server \
           --host 0.0.0.0 \
           --port 8000 \
-          --model qwen/Qwen3-14B \
+          --model /var/lib/vllm/models/qwen/Qwen3-14B \
           --dtype auto \
           --max-model-len 32768 \
           --gpu-memory-utilization 0.9 \
@@ -300,6 +303,18 @@
     device = "/onyx/ollama-data/models";
     options = [ "bind" "nofail" "x-systemd.requires=onyx.mount" "x-systemd.after=onyx.mount" ];
   };
+
+  # Store vLLM models on the larger /onyx volume
+  fileSystems."/var/lib/vllm/models" = {
+    device = "/onyx/vllm-data/models";
+    options = [ "bind" "nofail" "x-systemd.requires=onyx.mount" "x-systemd.after=onyx.mount" ];
+  };
+
+  # Create vLLM model directory on /onyx
+  systemd.tmpfiles.rules = [
+    "d /onyx/vllm-data 0755 vllm vllm -"
+    "d /onyx/vllm-data/models 0755 vllm vllm -"
+  ];
 
   # Enable Docker
   virtualisation.docker = {
