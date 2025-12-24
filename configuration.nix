@@ -312,10 +312,9 @@
           --quantization awq_marlin \
           --dtype auto \
           --max-model-len 32768 \
-          --gpu-memory-utilization 0.95 \
+          --gpu-memory-utilization 0.90 \
           --enable-auto-tool-choice \
-          --tool-call-parser hermes \
-          --enforce-eager
+          --tool-call-parser hermes
       '';
       Restart = "on-failure";
       RestartSec = "10s";
