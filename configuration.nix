@@ -267,7 +267,7 @@
       CUDA_VISIBLE_DEVICES = "0";
       VLLM_WORKER_MULTIPROC_METHOD = "spawn";
       HF_HOME = "/var/lib/vllm/cache";
-      LD_LIBRARY_PATH = "/run/opengl-driver/lib";
+      LD_LIBRARY_PATH = "${pkgs.lib.makeLibraryPath [ pkgs.stdenv.cc.cc.lib pkgs.zlib ]}:/run/opengl-driver/lib";
     };
 
     serviceConfig = {
