@@ -149,10 +149,9 @@
     htop
     tailscale
     (unstablePkgs.ollama.override { acceleration = "cuda"; })  # Use latest version with CUDA
-    (unstablePkgs.python3.withPackages (ps: with ps; [
-      vllm  # Includes torch with CUDA support
-      huggingface-hub  # HuggingFace model downloader
-    ]))
+    unstablePkgs.python3
+    unstablePkgs.python3Packages.pip
+    unstablePkgs.python3Packages.virtualenv
     kitty.terminfo
     neovim
     zsh
@@ -261,14 +260,14 @@
     requires = [ "var-lib-vllm-models.mount" ];
     wantedBy = [ "multi-user.target" ];
 
+    path = with pkgs; [ python3 python3Packages.pip python3Packages.virtualenv ];
+
     environment = {
       HOME = "/var/lib/vllm";
       CUDA_VISIBLE_DEVICES = "0";
       VLLM_WORKER_MULTIPROC_METHOD = "spawn";
-      VLLM_USE_V1 = "0";
       HF_HOME = "/var/lib/vllm/cache";
-      LD_LIBRARY_PATH = "${pkgs.lib.makeLibraryPath [ config.hardware.nvidia.package ]}:/run/opengl-driver/lib";
-      CUDA_HOME = "${config.hardware.nvidia.package}";
+      LD_LIBRARY_PATH = "/run/opengl-driver/lib";
     };
 
     serviceConfig = {
@@ -277,10 +276,20 @@
       Group = "vllm";
       StateDirectory = "vllm";
       CacheDirectory = "vllm";
+      WorkingDirectory = "/var/lib/vllm";
       SupplementaryGroups = [ "video" "render" ];
-      DeviceAllow = [ "/dev/nvidia0" "/dev/nvidiactl" "/dev/nvidia-uvm" ];
+
+      ExecStartPre = pkgs.writeShellScript "vllm-setup" ''
+        set -e
+        if [ ! -d /var/lib/vllm/venv ]; then
+          ${pkgs.python3}/bin/python3 -m venv /var/lib/vllm/venv
+          /var/lib/vllm/venv/bin/pip install --upgrade pip
+          /var/lib/vllm/venv/bin/pip install vllm huggingface-hub
+        fi
+      '';
+
       ExecStart = ''
-        ${unstablePkgs.python3.withPackages (ps: with ps; [ vllm ])}/bin/python -m vllm.entrypoints.openai.api_server \
+        /var/lib/vllm/venv/bin/python -m vllm.entrypoints.openai.api_server \
           --host 0.0.0.0 \
           --port 8000 \
           --model /var/lib/vllm/models/qwen/Qwen3-14B \
