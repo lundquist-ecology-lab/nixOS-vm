@@ -21,6 +21,15 @@
           allowUnfree = true;
         };
       };
+
+      # Overlays for Python version overrides
+      pythonOverlays = [
+        # Override default Python 3 to use Python 3.13 system-wide (latest stable)
+        (final: prev: {
+          python3 = prev.python313;
+          python3Packages = prev.python313Packages;
+        })
+      ];
     in
     {
       nixosConfigurations = {
@@ -31,6 +40,7 @@
             inherit inputs;
           };
           modules = [
+            { nixpkgs.overlays = pythonOverlays; }
             ./configuration.nix
             ({ pkgs, ... }: {
               environment.systemPackages = with nix-ai-tools.packages.${pkgs.system}; [
@@ -63,6 +73,7 @@
             inherit inputs;
           };
           modules = [
+            { nixpkgs.overlays = pythonOverlays; }
             ./configuration.nix
             ({ pkgs, ... }: {
               environment.systemPackages = with nix-ai-tools.packages.${pkgs.system}; [

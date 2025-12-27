@@ -149,9 +149,10 @@
     htop
     tailscale
     (unstablePkgs.ollama.override { acceleration = "cuda"; })  # Use latest version with CUDA
-    unstablePkgs.python3
-    unstablePkgs.python3Packages.pip
-    unstablePkgs.python3Packages.virtualenv
+    python3  # Python 3.13 (default via overlay)
+    python3Packages.pip
+    python3Packages.virtualenv
+    (pkgs.lib.meta.lowPrio pkgs.python314)  # Python 3.14 available via 'python3.14'
     kitty.terminfo
     neovim
     zsh
@@ -209,6 +210,51 @@
     rsync
     unzip
     zip
+
+    # LLM service switching scripts
+    (pkgs.writeShellApplication {
+      name = "use-vllm";
+      runtimeInputs = with pkgs; [ systemd ];
+      text = ''
+        echo "Switching to vLLM (Qwen3-14B-AWQ)..."
+        sudo systemctl stop ollama
+        sudo systemctl start vllm
+        echo "✓ vLLM is now active"
+        echo "  Model: Qwen3-14B-AWQ"
+        echo "  Endpoint: http://100.116.30.112:8000/v1"
+      '';
+    })
+    (pkgs.writeShellApplication {
+      name = "use-ollama";
+      runtimeInputs = with pkgs; [ systemd ];
+      text = ''
+        echo "Switching to Ollama..."
+        sudo systemctl stop vllm
+        sudo systemctl start ollama
+        echo "✓ Ollama is now active"
+        echo "  Endpoint: http://100.116.30.112:11434/v1"
+        echo "  Run 'ollama list' to see available models"
+      '';
+    })
+    (pkgs.writeShellApplication {
+      name = "llm-status";
+      runtimeInputs = with pkgs; [ systemd gnugrep ];
+      text = ''
+        echo "=== LLM Service Status ==="
+        echo ""
+        echo "vLLM:"
+        systemctl is-active vllm && echo "  ✓ Running" || echo "  ✗ Stopped"
+        echo ""
+        echo "Ollama:"
+        systemctl is-active ollama && echo "  ✓ Running" || echo "  ✗ Stopped"
+        echo ""
+        echo "GPU Usage:"
+        nvidia-smi --query-gpu=memory.used,memory.total --format=csv,noheader,nounits | head -1 | {
+          read -r used total
+          echo "  VRAM: ''${used}MB / ''${total}MB"
+        }
+      '';
+    })
   ];
 
   # Environment variables for theming
@@ -237,21 +283,23 @@
   # Enable Tailscale
   services.tailscale.enable = true;
   
-  # Disable Ollama (using vLLM instead for better tool calling)
+  # Enable Ollama service (but don't start by default - use vLLM as primary)
   services.ollama = {
-    enable = false;
+    enable = true;
     acceleration = "cuda"; # Use NVIDIA CUDA acceleration
     package = unstablePkgs.ollama.override { acceleration = "cuda"; }; # Use latest version with CUDA
+    host = "0.0.0.0"; # Listen on all interfaces
+    port = 11434;
+    environmentVariables = {
+      # Allow requests from OpenWebUI
+      OLLAMA_ORIGINS = "*";
+      # Keep only one model resident to limit RAM/VRAM pressure
+      OLLAMA_MAX_LOADED_MODELS = "1";
+    };
   };
 
-  # Force Ollama to listen on all interfaces for Docker access
-  systemd.services.ollama.environment = {
-    OLLAMA_HOST = pkgs.lib.mkForce "0.0.0.0:11434"; # override module default
-    # Allow requests from OpenWebUI
-    OLLAMA_ORIGINS = "*";
-    # Keep only one model resident to limit RAM/VRAM pressure
-    OLLAMA_MAX_LOADED_MODELS = "1";
-  };
+  # Don't start Ollama automatically (vLLM is primary)
+  systemd.services.ollama.wantedBy = pkgs.lib.mkForce [ ];
 
   # vLLM service for better tool calling and agentic workflows
   systemd.services.vllm = {
