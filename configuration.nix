@@ -129,6 +129,13 @@
   # Enable experimental features for flakes
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
 
+  # Automatic garbage collection to prevent disk filling up
+  nix.gc = {
+    automatic = true;
+    dates = "weekly";
+    options = "--delete-older-than 7d";
+  };
+
   # Fonts configuration
   fonts.packages = with pkgs; [
     noto-fonts
