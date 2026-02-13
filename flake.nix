@@ -99,5 +99,58 @@
           ];
         };
       };
+
+      devShells.${linuxSystem} = {
+        ai-trading = let
+          pkgs = import nixpkgs {
+            system = linuxSystem;
+            config = { allowUnfree = true; };
+          };
+        in pkgs.mkShell {
+          name = "ai-trading";
+
+          packages = with pkgs; [
+            python312
+            python312Packages.pip
+            python312Packages.virtualenv
+            stdenv.cc.cc.lib  # libstdc++
+            zlib
+            gcc
+            git
+          ];
+
+          LD_LIBRARY_PATH = "${pkgs.lib.makeLibraryPath [
+            pkgs.stdenv.cc.cc.lib
+            pkgs.zlib
+          ]}:/run/opengl-driver/lib";
+
+          CUDA_HOME = "/run/opengl-driver";
+
+          shellHook = ''
+            VENV_DIR="$HOME/ai-trading-venv"
+
+            if [ ! -d "$VENV_DIR" ]; then
+              echo "Creating virtual environment at $VENV_DIR..."
+              python3 -m venv "$VENV_DIR"
+              echo "Virtual environment created. Run 'ai-trading-setup' to install packages."
+            fi
+
+            source "$VENV_DIR/bin/activate"
+
+            echo ""
+            echo "=== AI Stock Trading Development Environment ==="
+            echo "Python:  $(python --version)"
+            echo "Venv:    $VENV_DIR"
+            echo "CUDA:    $(nvidia-smi --query-gpu=driver_version --format=csv,noheader 2>/dev/null || echo 'not available')"
+            echo ""
+            echo "Commands:"
+            echo "  ai-trading-setup    Install/update all pip packages"
+            echo "  ai-trading-verify   Verify GPU and package availability"
+            echo "  ai-trading-jupyter  Start Jupyter notebook server"
+            echo "  ai-trading-lean     Pull and verify LEAN Docker image"
+            echo ""
+          '';
+        };
+      };
     };
 }

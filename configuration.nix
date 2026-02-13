@@ -262,6 +262,178 @@
         }
       '';
     })
+
+    # AI Trading environment helper scripts
+    (pkgs.writeShellApplication {
+      name = "ai-trading-setup";
+      runtimeInputs = with pkgs; [ python312 git ];
+      text = ''
+        VENV_DIR="$HOME/ai-trading-venv"
+        TRADING_DIR="$HOME/ai-trading"
+
+        echo "=== AI Trading Setup ==="
+        echo ""
+
+        # Ensure venv exists
+        if [ ! -d "$VENV_DIR" ]; then
+          echo "[1/6] Creating virtual environment..."
+          python3 -m venv "$VENV_DIR"
+        else
+          echo "[1/6] Virtual environment exists."
+        fi
+
+        # shellcheck disable=SC1091
+        source "$VENV_DIR/bin/activate"
+
+        echo "[2/6] Upgrading pip..."
+        pip install --upgrade pip setuptools wheel
+
+        echo "[3/6] Installing PyTorch with CUDA 12.4..."
+        pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124
+
+        echo "[4/6] Installing trading and ML packages..."
+        pip install \
+          yfinance \
+          pandas \
+          numpy \
+          scikit-learn \
+          xgboost \
+          matplotlib \
+          seaborn \
+          jupyter \
+          ipykernel \
+          notebook \
+          jupyterlab \
+          fastapi \
+          'uvicorn[standard]' \
+          httpx \
+          websockets \
+          lean
+
+        echo "[5/6] Setting up TradingAgents..."
+        mkdir -p "$TRADING_DIR"
+        if [ ! -d "$TRADING_DIR/TradingAgents" ]; then
+          git clone https://github.com/TauricResearch/TradingAgents.git "$TRADING_DIR/TradingAgents"
+          pip install -e "$TRADING_DIR/TradingAgents"
+        else
+          echo "  TradingAgents already cloned. Updating..."
+          cd "$TRADING_DIR/TradingAgents"
+          git pull
+          pip install -e .
+        fi
+
+        echo "[6/6] Registering Jupyter kernel..."
+        python -m ipykernel install --user --name ai-trading --display-name "AI Trading (Python 3.12 + CUDA)"
+
+        echo ""
+        echo "=== Setup Complete ==="
+        echo "Run 'ai-trading-verify' to check the installation."
+      '';
+    })
+    (pkgs.writeShellApplication {
+      name = "ai-trading-verify";
+      runtimeInputs = [ ];
+      text = ''
+        VENV_DIR="$HOME/ai-trading-venv"
+
+        if [ ! -d "$VENV_DIR" ]; then
+          echo "ERROR: Virtual environment not found at $VENV_DIR"
+          echo "Run 'ai-trading-setup' first."
+          exit 1
+        fi
+
+        # shellcheck disable=SC1091
+        source "$VENV_DIR/bin/activate"
+
+        echo "=== AI Trading Environment Verification ==="
+        echo ""
+
+        echo "--- System GPU ---"
+        nvidia-smi --query-gpu=name,driver_version,memory.total --format=csv,noheader 2>/dev/null || echo "FAIL: nvidia-smi not available"
+        echo ""
+
+        echo "--- Python ---"
+        python --version
+        echo ""
+
+        echo "--- PyTorch CUDA ---"
+        python -c "
+import torch
+print(f'PyTorch version: {torch.__version__}')
+print(f'CUDA available:  {torch.cuda.is_available()}')
+if torch.cuda.is_available():
+    print(f'CUDA version:    {torch.version.cuda}')
+    print(f'GPU device:      {torch.cuda.get_device_name(0)}')
+    print(f'GPU memory:      {torch.cuda.get_device_properties(0).total_mem / 1024**3:.1f} GB')
+else:
+    print('WARNING: CUDA not available!')
+" 2>/dev/null || echo "FAIL: PyTorch import failed"
+        echo ""
+
+        echo "--- Package Availability ---"
+        for pkg in yfinance pandas numpy sklearn xgboost matplotlib jupyter fastapi uvicorn; do
+          if python -c "import $pkg" 2>/dev/null; then
+            echo "  OK: $pkg"
+          else
+            echo "  MISSING: $pkg"
+          fi
+        done
+        echo ""
+
+        echo "--- Docker GPU ---"
+        if docker run --rm --gpus all nvidia/cuda:12.4.0-base-ubuntu22.04 nvidia-smi --query-gpu=name --format=csv,noheader 2>/dev/null; then
+          echo "  OK: Docker GPU passthrough working"
+        else
+          echo "  WARN: Docker GPU test failed (may need: docker pull nvidia/cuda:12.4.0-base-ubuntu22.04)"
+        fi
+        echo ""
+
+        echo "--- LEAN Docker ---"
+        if docker image inspect quantconnect/lean:latest >/dev/null 2>&1; then
+          echo "  OK: LEAN image available"
+        else
+          echo "  WARN: LEAN image not pulled (run 'ai-trading-lean' to pull)"
+        fi
+        echo ""
+
+        echo "=== Verification Complete ==="
+      '';
+    })
+    (pkgs.writeShellApplication {
+      name = "ai-trading-jupyter";
+      runtimeInputs = [ ];
+      text = ''
+        VENV_DIR="$HOME/ai-trading-venv"
+        if [ ! -d "$VENV_DIR" ]; then
+          echo "ERROR: Run 'ai-trading-setup' first."
+          exit 1
+        fi
+        # shellcheck disable=SC1091
+        source "$VENV_DIR/bin/activate"
+        echo "Starting Jupyter Lab on port 8888..."
+        echo "Access at: http://$(hostname -I | awk '{print $1}'):8888"
+        jupyter lab --ip=0.0.0.0 --port=8888 --no-browser
+      '';
+    })
+    (pkgs.writeShellApplication {
+      name = "ai-trading-lean";
+      runtimeInputs = with pkgs; [ docker ];
+      text = ''
+        echo "Pulling QuantConnect LEAN Docker image..."
+        docker pull quantconnect/lean:latest
+        echo ""
+        echo "Pulling LEAN foundation image..."
+        docker pull quantconnect/lean:foundation
+        echo ""
+        echo "Testing LEAN Docker GPU access..."
+        docker run --rm --gpus all quantconnect/lean:latest nvidia-smi --query-gpu=name --format=csv,noheader 2>/dev/null \
+          && echo "OK: LEAN Docker has GPU access" \
+          || echo "Note: LEAN image may not include nvidia-smi. GPU access is handled by the container toolkit."
+        echo ""
+        echo "LEAN Docker images ready."
+        echo "Use 'lean init' in a project directory to start a LEAN project."
+      '';
+    })
   ];
 
   # Environment variables for theming
@@ -412,6 +584,9 @@
     enableOnBoot = true;
   };
 
+  # NVIDIA Container Toolkit for Docker GPU access (needed for QuantConnect LEAN)
+  hardware.nvidia-container-toolkit.enable = true;
+
   # Enable Proxmox guest agent for VM integration
   services.qemuGuest.enable = true;
 
@@ -419,7 +594,7 @@
   services.timesyncd.enable = true;
 
   # Open ports in the firewall
-  networking.firewall.allowedTCPPorts = [ 5900 11434 8000 ];  # x0vncserver (TigerVNC), Ollama API, vLLM API
+  networking.firewall.allowedTCPPorts = [ 5900 11434 8000 8888 8080 ];  # VNC, Ollama, vLLM, Jupyter, FastAPI
   # networking.firewall.allowedUDPPorts = [ ... ];
   # Or disable the firewall altogether (not recommended for production)
   # networking.firewall.enable = false;
