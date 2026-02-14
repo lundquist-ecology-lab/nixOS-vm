@@ -288,8 +288,8 @@
         echo "[2/6] Upgrading pip..."
         pip install --upgrade pip setuptools wheel
 
-        echo "[3/6] Installing PyTorch with CUDA 12.4..."
-        pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124
+        echo "[3/6] Installing PyTorch with CUDA 12.8..."
+        pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128
 
         echo "[4/6] Installing trading and ML packages..."
         pip install \
@@ -364,10 +364,13 @@ print(f'CUDA available:  {torch.cuda.is_available()}')
 if torch.cuda.is_available():
     print(f'CUDA version:    {torch.version.cuda}')
     print(f'GPU device:      {torch.cuda.get_device_name(0)}')
-    print(f'GPU memory:      {torch.cuda.get_device_properties(0).total_mem / 1024**3:.1f} GB')
+    try:
+        print(f'GPU memory:      {torch.cuda.get_device_properties(0).total_mem / 1024**3:.1f} GB')
+    except Exception:
+        print('GPU memory:      (could not query)')
 else:
     print('WARNING: CUDA not available!')
-" 2>/dev/null || echo "FAIL: PyTorch import failed"
+" || echo "FAIL: PyTorch import failed"
         echo ""
 
         echo "--- Package Availability ---"
@@ -381,10 +384,10 @@ else:
         echo ""
 
         echo "--- Docker GPU ---"
-        if docker run --rm --gpus all nvidia/cuda:12.4.0-base-ubuntu22.04 nvidia-smi --query-gpu=name --format=csv,noheader 2>/dev/null; then
+        if docker run --rm --gpus all nvidia/cuda:12.8.0-base-ubuntu22.04 nvidia-smi --query-gpu=name --format=csv,noheader 2>/dev/null; then
           echo "  OK: Docker GPU passthrough working"
         else
-          echo "  WARN: Docker GPU test failed (may need: docker pull nvidia/cuda:12.4.0-base-ubuntu22.04)"
+          echo "  WARN: Docker GPU test failed (may need: docker pull nvidia/cuda:12.8.0-base-ubuntu22.04)"
         fi
         echo ""
 
@@ -546,6 +549,30 @@ else:
       '';
       Restart = "on-failure";
       RestartSec = "10s";
+    };
+  };
+
+  # TradingAgents Chainlit web UI service
+  systemd.services.trading-agents = {
+    description = "TradingAgents Chainlit Web UI";
+    after = [ "network.target" "ollama.service" ];
+    wantedBy = [ ];  # Don't auto-start; use 'ai-trading-web' to start
+
+    environment = {
+      HOME = "/home/mlundquist";
+      CUDA_VISIBLE_DEVICES = "0";
+      LD_LIBRARY_PATH = "${pkgs.lib.makeLibraryPath [ pkgs.stdenv.cc.cc.lib pkgs.zlib ]}:/run/opengl-driver/lib";
+      CUDA_HOME = "/run/opengl-driver";
+    };
+
+    serviceConfig = {
+      Type = "simple";
+      User = "mlundquist";
+      Group = "users";
+      WorkingDirectory = "/home/mlundquist/ai-trading/TradingAgents";
+      ExecStart = "/home/mlundquist/ai-trading-venv/bin/chainlit run chainlit_app.py --host 0.0.0.0 --port 8080";
+      Restart = "on-failure";
+      RestartSec = "5s";
     };
   };
 
