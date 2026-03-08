@@ -72,6 +72,14 @@
   # Enable zsh system-wide
   programs.zsh.enable = true;
 
+  # Tmux configuration
+  programs.tmux = {
+    enable = true;
+    extraConfig = ''
+      set -g mouse on
+    '';
+  };
+
   # User accounts
   users.users.mlundquist = {
     isNormalUser = true;
@@ -159,6 +167,7 @@
     python3  # Python 3.13 (default via overlay)
     python3Packages.pip
     python3Packages.virtualenv
+    python3Packages.boto3
     (pkgs.lib.meta.lowPrio pkgs.python314)  # Python 3.14 available via 'python3.14'
     kitty.terminfo
     neovim
