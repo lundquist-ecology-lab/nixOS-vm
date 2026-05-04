@@ -57,7 +57,15 @@
 
     nvidiaSettings = true;
 
-    package = config.boot.kernelPackages.nvidiaPackages.beta;  # Use beta driver for latest GPU support
+    # RTX 5060 Ti (GB206) requires 595.x+; 580.142 (nixos-25.11 beta) lacks the PCI ID
+    package = config.boot.kernelPackages.nvidiaPackages.mkDriver {
+      version = "595.58.03";
+      sha256_64bit = "sha256-jA1Plnt5MsSrVxQnKu6BAzkrCnAskq+lVRdtNiBYKfk=";
+      sha256_aarch64 = "sha256-hzzIKY1Te8QkCBWR+H5k1FB/HK1UgGhai6cl3wEaPT8=";
+      openSha256 = "sha256-6LvJyT0cMXGS290Dh8hd9rc+nYZqBzDIlItOFk8S4n8=";
+      settingsSha256 = "sha256-2vLF5Evl2D6tRQJo0uUyY3tpWqjvJQ0/Rpxan3NOD3c=";
+      persistencedSha256 = "sha256-AtjM/ml/ngZil8DMYNH+P111ohuk9mWw5t4z7CHjPWw=";
+    };
   };
 
   boot.blacklistedKernelModules = [ "nouveau" "nvidiafb" ];
@@ -71,12 +79,50 @@
 
   # Enable zsh system-wide
   programs.zsh.enable = true;
+  
+  # Enable VSCode
+  programs.nix-ld.enable = true;
 
   # Tmux configuration
   programs.tmux = {
     enable = true;
     extraConfig = ''
+      # Use the most broadly available terminfo entry for SSH/tmux sessions.
+      # This avoids terminal capability queries leaking through when the local
+      # terminal, SSH session, and remote tmux terminfo do not align cleanly.
+      set -g default-terminal "screen-256color"
+      set -g allow-passthrough off
+      set -as terminal-overrides ",xterm-256color:RGB"
+      set -as terminal-overrides ",screen-256color:RGB"
+      set -as terminal-overrides ",tmux-256color:RGB"
+      set -as terminal-overrides ",vte-256color:RGB"
+
       set -g mouse on
+      set -g base-index 1
+      setw -g pane-base-index 1
+      set -g renumber-windows on
+      set -g history-limit 100000
+
+      set -g status-position bottom
+      set -g status-interval 5
+      set -g status-justify left
+      set -g status-style "bg=#151515,fg=#E8E3E3"
+      set -g message-style "bg=#8DA3B9,fg=#151515"
+      set -g mode-style "bg=#8AA6A2,fg=#151515"
+
+      set -g pane-border-style "fg=#424242"
+      set -g pane-active-border-style "fg=#D9BC8C"
+
+      setw -g window-status-format " #I:#W "
+      setw -g window-status-current-format " #I:#W "
+      setw -g window-status-style "bg=#151515,fg=#8AA6A2"
+      setw -g window-status-current-style "bg=#D9BC8C,fg=#151515,bold"
+      setw -g window-status-activity-style "bg=#151515,fg=#B66467"
+
+      set -g status-left-length 32
+      set -g status-right-length 64
+      set -g status-left " #[fg=#D9BC8C,bold]tmux #[fg=#E8E3E3]#S "
+      set -g status-right " #[fg=#8AA6A2]%Y-%m-%d #[fg=#E8E3E3]%H:%M "
     '';
   };
 
@@ -232,11 +278,11 @@
       name = "use-vllm";
       runtimeInputs = with pkgs; [ systemd ];
       text = ''
-        echo "Switching to vLLM (Qwen3-14B-AWQ)..."
+        echo "Switching to vLLM (Qwen2.5-Coder-14B-Instruct-AWQ)..."
         sudo systemctl stop ollama
         sudo systemctl start vllm
         echo "✓ vLLM is now active"
-        echo "  Model: Qwen3-14B-AWQ"
+        echo "  Model: Qwen2.5-Coder-14B-Instruct-AWQ"
         echo "  Endpoint: http://100.116.30.112:8000/v1"
       '';
     })
@@ -494,20 +540,21 @@ else:
 
   # vLLM service for better tool calling and agentic workflows
   systemd.services.vllm = {
-    description = "vLLM OpenAI-compatible API server";
+    description = "vLLM OpenAI-compatible API server for local code models";
     after = [ "network.target" "var-lib-vllm-models.mount" ];
     requires = [ "var-lib-vllm-models.mount" ];
     wantedBy = [ "multi-user.target" ];
 
-    path = with pkgs; [ python3 python3Packages.pip python3Packages.virtualenv ];
+    path = with pkgs; [ python3 python3Packages.pip python3Packages.virtualenv which ];
 
     environment = {
+      CC = "/nix/store/0j1ajvl2qwwb9n5a91hzd0j98fk9fa3k-gcc-wrapper-14.3.0/bin/cc";
       HOME = "/var/lib/vllm";
       CUDA_VISIBLE_DEVICES = "0";
       VLLM_WORKER_MULTIPROC_METHOD = "spawn";
-      VLLM_USE_V1 = "0";
       VLLM_ALLOW_RUNTIME_LORA_UPDATING = "false";
       HF_HOME = "/var/lib/vllm/cache";
+      TRITON_LIBCUDA_PATH = "/run/opengl-driver/lib";
       LD_LIBRARY_PATH = "${pkgs.lib.makeLibraryPath [ pkgs.stdenv.cc.cc.lib pkgs.zlib ]}:/run/opengl-driver/lib";
     };
 
@@ -525,21 +572,26 @@ else:
         set -e
         export LD_LIBRARY_PATH=/run/opengl-driver/lib:$LD_LIBRARY_PATH
         export CUDA_HOME=/run/opengl-driver
+        VENV_DIR=/var/lib/vllm/venv
+        VENV_PYTHON="$VENV_DIR/bin/python"
 
-        # Create venv if it doesn't exist
-        if [ ! -d /var/lib/vllm/venv ]; then
-          ${pkgs.python3}/bin/python3 -m venv /var/lib/vllm/venv
-          /var/lib/vllm/venv/bin/pip install --upgrade pip
+        # Recreate the environment if it is missing or points at a removed Nix
+        # store Python interpreter.
+        if [ ! -x "$VENV_PYTHON" ] || ! "$VENV_PYTHON" -c "import sys" >/dev/null 2>&1; then
+          rm -rf "$VENV_DIR"
+          ${pkgs.python3}/bin/python3 -m venv "$VENV_DIR"
         fi
 
+        "$VENV_PYTHON" -m pip install --upgrade pip
+
         # Install PyTorch if not already installed
-        if ! /var/lib/vllm/venv/bin/python -c "import torch" 2>/dev/null; then
-          /var/lib/vllm/venv/bin/pip install torch --index-url https://download.pytorch.org/whl/cu121
+        if ! "$VENV_PYTHON" -c "import torch" 2>/dev/null; then
+          "$VENV_PYTHON" -m pip install torch --index-url https://download.pytorch.org/whl/cu121
         fi
 
         # Install vLLM if not already installed
-        if ! /var/lib/vllm/venv/bin/python -c "import vllm" 2>/dev/null; then
-          /var/lib/vllm/venv/bin/pip install vllm huggingface-hub
+        if ! "$VENV_PYTHON" -c "import vllm" 2>/dev/null; then
+          "$VENV_PYTHON" -m pip install vllm huggingface-hub
         fi
       '';
 
@@ -547,13 +599,15 @@ else:
         /var/lib/vllm/venv/bin/python -m vllm.entrypoints.openai.api_server \
           --host 0.0.0.0 \
           --port 8000 \
-          --model /var/lib/vllm/models/qwen/Qwen3-14B-AWQ \
-          --quantization awq_marlin \
-          --dtype auto \
-          --max-model-len 20480 \
-          --gpu-memory-utilization 0.95 \
+          --model Qwen/Qwen2.5-Coder-14B-Instruct-AWQ \
+          --served-model-name qwen2.5-coder-14b-awq \
+          --generation-config vllm \
           --enable-auto-tool-choice \
           --tool-call-parser hermes \
+          --quantization awq_marlin \
+          --dtype auto \
+          --max-model-len 8192 \
+          --gpu-memory-utilization 0.80 \
           --enforce-eager
       '';
       Restart = "on-failure";
@@ -622,6 +676,15 @@ else:
 
   # NVIDIA Container Toolkit for Docker GPU access (needed for QuantConnect LEAN)
   hardware.nvidia-container-toolkit.enable = true;
+
+  # The CDI generator is a short-lived process that gets killed mid-run during
+  # nixos-rebuild switch when the NVIDIA driver changes, causing restart-limit failures.
+  systemd.services.nvidia-container-toolkit-cdi-generator = {
+    serviceConfig = {
+      StartLimitBurst = 5;
+      StartLimitIntervalSec = 60;
+    };
+  };
 
   # Enable Proxmox guest agent for VM integration
   services.qemuGuest.enable = true;

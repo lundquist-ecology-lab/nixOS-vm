@@ -8,6 +8,7 @@
     EDITOR = "nvim";
     VISUAL = "nvim";
     TERMINAL = "mate-terminal";
+    PYTHONPATH = "/home/mlundquist/.local/lib/python3.12/site-packages";
   };
 
   home.sessionPath = [
@@ -46,6 +47,9 @@
         alias term="mate-terminal"
         alias onyx="cd /onyx"
         alias peppy="cd /peppy"
+        alias oc='opencode'
+        alias ocfast='opencode -m vllm/qwen2.5-coder-14b-awq'
+        alias oclong='opencode -m ollama/llama3.1:8b-32k'
         setopt NO_BEEP
 
         export VISUAL="nvim"
@@ -110,16 +114,137 @@
     configFile."btop/themes/kitty.theme" = {
       source = ./dotfiles/btop/themes/kitty.theme;
     };
+    configFile."opencode/instructions/local-coder.md" = {
+      text = ''
+        Prefer direct, code-first responses for software tasks.
+
+        Rules:
+        - If the user asks for code, start with the code block.
+        - Keep explanations short unless the user explicitly asks for depth.
+        - For fixes and edits, state the root cause in one sentence, then show the patch or replacement code.
+        - For plans, use a short numbered list and avoid implementation detail unless asked.
+        - Avoid long preambles, motivational language, and repeated restatement of the request.
+        - When tests are requested, include focused tests only.
+        - When the request is ambiguous, make the smallest reasonable assumption and state it briefly.
+      '';
+    };
     # OpenCode configuration for Ollama (localhost for VM)
     configFile."opencode/opencode.json" = {
       text = builtins.toJSON {
         "$schema" = "https://opencode.ai/config.json";
+        instructions = [
+          "./instructions/local-coder.md"
+        ];
+        agent = {
+          build = {
+            maxTokens = 1024;
+            maxOutputTokens = 1024;
+            maxSteps = 12;
+          };
+          general = {
+            maxTokens = 1024;
+            maxOutputTokens = 1024;
+            maxSteps = 12;
+          };
+          explore = {
+            maxTokens = 1024;
+            maxOutputTokens = 1024;
+            maxSteps = 12;
+          };
+          plan = {
+            maxTokens = 1024;
+            maxOutputTokens = 1024;
+            maxSteps = 8;
+          };
+        };
+        command = {
+          fix = {
+            description = "Code-first bug fix";
+            template = ''
+              Fix the problem below.
+
+              Output format:
+              1. One sentence naming the root cause.
+              2. The corrected code or patch.
+              3. Minimal tests if they help verify the fix.
+
+              Keep the response concise and code-first.
+
+              Request:
+              $ARGUMENTS
+            '';
+          };
+          plan = {
+            description = "Short implementation plan";
+            template = ''
+              Produce a short implementation plan for the request below.
+
+              Rules:
+              - Use 3 to 6 numbered steps.
+              - Focus on concrete engineering actions.
+              - Do not write code unless explicitly requested.
+              - Mention major risks or assumptions briefly.
+
+              Request:
+              $ARGUMENTS
+            '';
+          };
+          explain = {
+            description = "Brief technical explanation";
+            template = ''
+              Explain the following in a concise, technical way.
+
+              Rules:
+              - Optimize for clarity and speed of understanding.
+              - Use examples only if they materially help.
+              - Keep the answer compact unless the request asks for depth.
+
+              Topic:
+              $ARGUMENTS
+            '';
+          };
+        };
         provider = {
+          vllm = {
+            npm = "@ai-sdk/openai-compatible";
+            name = "vLLM (local)";
+            options = {
+              baseURL = "http://localhost:8000/v1";
+              maxTokens = 256;
+              maxOutputTokens = 256;
+              # Be explicit for clients that forward provider options verbatim
+              # to an OpenAI-compatible backend using snake_case fields.
+              max_tokens = 256;
+              max_output_tokens = 256;
+            };
+            models = {
+              "qwen2.5-coder-14b-awq" = {
+                name = "Qwen2.5 Coder 14B AWQ";
+                tools = true;
+                # Match the vLLM server's advertised context window so
+                # opencode does not assume a larger default from model metadata.
+                limit = {
+                  context = 8192;
+                  output = 256;
+                };
+                options = {
+                  maxTokens = 256;
+                  maxOutputTokens = 256;
+                  max_tokens = 256;
+                  max_output_tokens = 256;
+                };
+              };
+            };
+          };
           ollama = {
             npm = "@ai-sdk/openai-compatible";
             name = "Ollama (local)";
             options = {
               baseURL = "http://localhost:11434/v1";
+              maxTokens = 2048;
+              maxOutputTokens = 2048;
+              max_tokens = 2048;
+              max_output_tokens = 2048;
             };
             models = {
               # Recommended agentic models with working tool calling
@@ -130,18 +255,32 @@
               "llama3.1:8b-32k" = {
                 name = "Llama 3.1 8B (32K)";
                 tools = true;  # 32K context for tool calling
+                limit = {
+                  context = 32768;
+                  output = 2048;
+                };
+                options = {
+                  maxTokens = 2048;
+                  maxOutputTokens = 2048;
+                  max_tokens = 2048;
+                  max_output_tokens = 2048;
+                };
               };
               "devstral:24b" = {
-                name = "Devstral 24B (4K - no tools)";
+                name = "Devstral 24B (Slow comparison model)";
                 tools = false;  # Default 4K context too small
               };
               "devstral:24b-16k" = {
-                name = "Devstral 24B (16K - needs 16GB VRAM)";
+                name = "Devstral 24B (16K - benchmark only)";
                 tools = true;  # 16K context, less memory than 32K
               };
               "devstral:24b-32k" = {
                 name = "Devstral 24B (32K - needs 24GB VRAM)";
                 tools = true;  # Requires RTX 4090 or better
+              };
+              "ministral-3:14b" = {
+                name = "Ministral 3 14B (Best current local default)";
+                tools = false;
               };
               "llama3.1:70b" = {
                 name = "Llama 3.1 70B (Most Capable)";
@@ -155,6 +294,10 @@
                 name = "Dolphin 3.0 Llama 3.1 8B (General)";
                 tools = true;
               };
+              "qwen3:14b" = {
+                name = "Qwen3 14B (Reasoning-heavy alternative)";
+                tools = false;
+              };
               # Models without tool support
               "deepseek-r1:latest" = {
                 name = "DeepSeek R1 (Reasoning only)";
@@ -167,7 +310,7 @@
             };
           };
         };
-        model = "ollama/llama3.1:8b-32k";  # Default: 32K context for tools
+        model = "ollama/llama3.1:8b-32k";
       };
     };
   };
@@ -234,6 +377,10 @@
       tqdm
       pandocfilters
       panflute
+
+      # ML / Deep learning
+      torch-bin
+      torchvision-bin
 
       # Jupyter
       jupyter
