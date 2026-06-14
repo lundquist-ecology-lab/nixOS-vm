@@ -81,9 +81,6 @@ vim.api.nvim_create_autocmd({"FocusGained", "BufEnter", "CursorHold"}, {
     end,
 })
 
-vim.opt.clipboard:append("unnamedplus")
-
-
 vim.api.nvim_create_autocmd("TextYankPost", {
   callback = function()
     require("osc52").copy_register('"')

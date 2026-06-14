@@ -178,6 +178,22 @@ require("lazy").setup({
       require("claude-code").setup()
     end
   },
+
+  -- OpenCode
+  {
+    "nickjvandyke/opencode.nvim",
+    version = "*",
+    keys = {
+      { "<C-a>", function() require("opencode").ask("@this: ", { submit = true }) end, mode = { "n", "x" }, desc = "Ask opencode" },
+      { "<C-x>", function() require("opencode").select() end, mode = { "n", "x" }, desc = "OpenCode actions" },
+      { "<C-.>", function() require("opencode").toggle() end, mode = { "n", "t" }, desc = "Toggle opencode" },
+      { "go", function() return require("opencode").operator("@this ") end, mode = { "n", "x" }, expr = true, desc = "Send range to opencode" },
+    },
+    config = function()
+      vim.g.opencode_opts = {}
+      vim.o.autoread = true
+    end,
+  },
   -- LaTeX Support
   {
     'lervag/vimtex',
@@ -211,7 +227,7 @@ require("lazy").setup({
 
   {
     'ojroques/nvim-osc52',
-    event = "VeryLazy",
+    lazy = false,
     config = function()
       require('osc52').setup({ max_length = 0, trim = false, silent = false })
       vim.keymap.set('n', '<leader>y', function() require('osc52').copy_register('"') end)

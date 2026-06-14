@@ -275,37 +275,10 @@
 
     # LLM service switching scripts
     (pkgs.writeShellApplication {
-      name = "use-vllm";
-      runtimeInputs = with pkgs; [ systemd ];
-      text = ''
-        echo "Switching to vLLM (Qwen2.5-Coder-14B-Instruct-AWQ)..."
-        sudo systemctl stop ollama
-        sudo systemctl start vllm
-        echo "✓ vLLM is now active"
-        echo "  Model: Qwen2.5-Coder-14B-Instruct-AWQ"
-        echo "  Endpoint: http://100.116.30.112:8000/v1"
-      '';
-    })
-    (pkgs.writeShellApplication {
-      name = "use-ollama";
-      runtimeInputs = with pkgs; [ systemd ];
-      text = ''
-        echo "Switching to Ollama..."
-        sudo systemctl stop vllm
-        sudo systemctl start ollama
-        echo "✓ Ollama is now active"
-        echo "  Endpoint: http://100.116.30.112:11434/v1"
-        echo "  Run 'ollama list' to see available models"
-      '';
-    })
-    (pkgs.writeShellApplication {
       name = "llm-status";
       runtimeInputs = with pkgs; [ systemd gnugrep ];
       text = ''
         echo "=== LLM Service Status ==="
-        echo ""
-        echo "vLLM:"
-        systemctl is-active vllm && echo "  ✓ Running" || echo "  ✗ Stopped"
         echo ""
         echo "Ollama:"
         systemctl is-active ollama && echo "  ✓ Running" || echo "  ✗ Stopped"
@@ -520,7 +493,7 @@ else:
   # Enable Tailscale
   services.tailscale.enable = true;
   
-  # Enable Ollama service (but don't start by default - use vLLM as primary)
+  # Enable Ollama service
   services.ollama = {
     enable = true;
     acceleration = "cuda"; # Use NVIDIA CUDA acceleration
@@ -532,86 +505,10 @@ else:
       OLLAMA_ORIGINS = "*";
       # Keep only one model resident to limit RAM/VRAM pressure
       OLLAMA_MAX_LOADED_MODELS = "1";
-    };
-  };
-
-  # Don't start Ollama automatically (vLLM is primary)
-  systemd.services.ollama.wantedBy = pkgs.lib.mkForce [ ];
-
-  # vLLM service for better tool calling and agentic workflows
-  systemd.services.vllm = {
-    description = "vLLM OpenAI-compatible API server for local code models";
-    after = [ "network.target" "var-lib-vllm-models.mount" ];
-    requires = [ "var-lib-vllm-models.mount" ];
-    wantedBy = [ "multi-user.target" ];
-
-    path = with pkgs; [ python3 python3Packages.pip python3Packages.virtualenv which ];
-
-    environment = {
-      CC = "/nix/store/0j1ajvl2qwwb9n5a91hzd0j98fk9fa3k-gcc-wrapper-14.3.0/bin/cc";
-      HOME = "/var/lib/vllm";
-      CUDA_VISIBLE_DEVICES = "0";
-      VLLM_WORKER_MULTIPROC_METHOD = "spawn";
-      VLLM_ALLOW_RUNTIME_LORA_UPDATING = "false";
-      HF_HOME = "/var/lib/vllm/cache";
-      TRITON_LIBCUDA_PATH = "/run/opengl-driver/lib";
-      LD_LIBRARY_PATH = "${pkgs.lib.makeLibraryPath [ pkgs.stdenv.cc.cc.lib pkgs.zlib ]}:/run/opengl-driver/lib";
-    };
-
-    serviceConfig = {
-      Type = "simple";
-      User = "vllm";
-      Group = "vllm";
-      StateDirectory = "vllm";
-      CacheDirectory = "vllm";
-      WorkingDirectory = "/var/lib/vllm";
-      SupplementaryGroups = [ "video" "render" ];
-      TimeoutStartSec = "20min";
-
-      ExecStartPre = pkgs.writeShellScript "vllm-setup" ''
-        set -e
-        export LD_LIBRARY_PATH=/run/opengl-driver/lib:$LD_LIBRARY_PATH
-        export CUDA_HOME=/run/opengl-driver
-        VENV_DIR=/var/lib/vllm/venv
-        VENV_PYTHON="$VENV_DIR/bin/python"
-
-        # Recreate the environment if it is missing or points at a removed Nix
-        # store Python interpreter.
-        if [ ! -x "$VENV_PYTHON" ] || ! "$VENV_PYTHON" -c "import sys" >/dev/null 2>&1; then
-          rm -rf "$VENV_DIR"
-          ${pkgs.python3}/bin/python3 -m venv "$VENV_DIR"
-        fi
-
-        "$VENV_PYTHON" -m pip install --upgrade pip
-
-        # Install PyTorch if not already installed
-        if ! "$VENV_PYTHON" -c "import torch" 2>/dev/null; then
-          "$VENV_PYTHON" -m pip install torch --index-url https://download.pytorch.org/whl/cu121
-        fi
-
-        # Install vLLM if not already installed
-        if ! "$VENV_PYTHON" -c "import vllm" 2>/dev/null; then
-          "$VENV_PYTHON" -m pip install vllm huggingface-hub
-        fi
-      '';
-
-      ExecStart = ''
-        /var/lib/vllm/venv/bin/python -m vllm.entrypoints.openai.api_server \
-          --host 0.0.0.0 \
-          --port 8000 \
-          --model Qwen/Qwen2.5-Coder-14B-Instruct-AWQ \
-          --served-model-name qwen2.5-coder-14b-awq \
-          --generation-config vllm \
-          --enable-auto-tool-choice \
-          --tool-call-parser hermes \
-          --quantization awq_marlin \
-          --dtype auto \
-          --max-model-len 8192 \
-          --gpu-memory-utilization 0.80 \
-          --enforce-eager
-      '';
-      Restart = "on-failure";
-      RestartSec = "10s";
+      # Reduce KV cache VRAM usage (halves KV cache memory vs f16)
+      OLLAMA_KV_CACHE_TYPE = "q8_0";
+      # Enable flash attention for more efficient attention computation
+      OLLAMA_FLASH_ATTENTION = "1";
     };
   };
 
@@ -639,34 +536,11 @@ else:
     };
   };
 
-  # Create vllm user
-  users.users.vllm = {
-    isSystemUser = true;
-    group = "vllm";
-    home = "/var/lib/vllm";
-    createHome = true;
-    extraGroups = [ "video" "render" ];  # Access to GPU
-  };
-
-  users.groups.vllm = {};
-
   # Store Ollama models on the larger /onyx volume
   fileSystems."/var/lib/ollama/models" = {
     device = "/onyx/ollama-data/models";
     options = [ "bind" "nofail" "x-systemd.requires=onyx.mount" "x-systemd.after=onyx.mount" ];
   };
-
-  # Store vLLM models on the larger /onyx volume
-  fileSystems."/var/lib/vllm/models" = {
-    device = "/onyx/vllm-data/models";
-    options = [ "bind" "nofail" "x-systemd.requires=onyx.mount" "x-systemd.after=onyx.mount" ];
-  };
-
-  # Create vLLM model directory on /onyx
-  systemd.tmpfiles.rules = [
-    "d /onyx/vllm-data 0755 vllm vllm -"
-    "d /onyx/vllm-data/models 0755 vllm vllm -"
-  ];
 
   # Enable Docker
   virtualisation.docker = {
@@ -693,7 +567,7 @@ else:
   services.timesyncd.enable = true;
 
   # Open ports in the firewall
-  networking.firewall.allowedTCPPorts = [ 5900 11434 8000 8888 8080 ];  # VNC, Ollama, vLLM, Jupyter, FastAPI
+  networking.firewall.allowedTCPPorts = [ 5900 11434 8888 8080 ];  # VNC, Ollama, Jupyter, FastAPI
   # networking.firewall.allowedUDPPorts = [ ... ];
   # Or disable the firewall altogether (not recommended for production)
   # networking.firewall.enable = false;

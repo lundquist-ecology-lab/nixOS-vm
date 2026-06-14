@@ -48,8 +48,6 @@
         alias onyx="cd /onyx"
         alias peppy="cd /peppy"
         alias oc='opencode'
-        alias ocfast='opencode -m vllm/qwen2.5-coder-14b-awq'
-        alias oclong='opencode -m ollama/llama3.1:8b-32k'
         setopt NO_BEEP
 
         export VISUAL="nvim"
@@ -118,10 +116,31 @@
       text = ''
         Prefer direct, code-first responses for software tasks.
 
-        Rules:
-        - If the user asks for code, start with the code block.
+        ## Tool use — MANDATORY
+
+        You have tools available to read, write, and edit files. You MUST use them.
+
+        - NEVER output file contents as a code block in chat. Always use the write_file or edit tool to write to disk.
+        - NEVER describe what you are going to do. Just do it using the appropriate tool call.
+        - NEVER output JSON tool call syntax as text. Issue the actual tool call.
+        - When asked to create a file, call the write tool immediately — do not plan, do not explain first.
+        - When asked to edit a file, read it first with the read tool, then write the change with the edit tool.
+        - For string-based edits, choose an `oldString` that is unique in the file by including enough surrounding context.
+        - For exact-match edit tools, copy the `oldString` directly from the file and preserve whitespace, indentation, and line endings exactly.
+        - If the tool reports `found multiple matches for oldString`, immediately expand the match to include surrounding lines, nearby function signatures, or the full block until it is unique.
+        - If an `oldString` matches multiple locations, stop retrying the same short match and replace a larger block or rewrite the file instead.
+        - If an exact string match keeps failing, stop making tiny edits and rewrite the nearest unambiguous block or the full file.
+        - Complete every task using tool calls. A response that only contains text has failed.
+
+        ## Style
+
         - Keep explanations short unless the user explicitly asks for depth.
-        - For fixes and edits, state the root cause in one sentence, then show the patch or replacement code.
+        - Do not expose chain-of-thought or internal reasoning. Provide conclusions only.
+        - Do not narrate planned actions or describe tool usage before calling tools.
+        - Prefer terse responses: one sentence when possible, short paragraphs when necessary.
+        - Avoid filler phrases, self-references, and step-by-step commentary unless the user asks for it.
+        - For Gemma 4 models, never enable thinking mode or include the `<|think|>` token in prompts.
+        - For fixes and edits, state the root cause in one sentence, then apply the fix via tool call.
         - For plans, use a short numbered list and avoid implementation detail unless asked.
         - Avoid long preambles, motivational language, and repeated restatement of the request.
         - When tests are requested, include focused tests only.
@@ -137,23 +156,23 @@
         ];
         agent = {
           build = {
-            maxTokens = 1024;
-            maxOutputTokens = 1024;
+            maxTokens = 32768;
+            maxOutputTokens = 16384;
             maxSteps = 12;
           };
           general = {
-            maxTokens = 1024;
-            maxOutputTokens = 1024;
+            maxTokens = 8192;
+            maxOutputTokens = 4096;
             maxSteps = 12;
           };
           explore = {
-            maxTokens = 1024;
-            maxOutputTokens = 1024;
+            maxTokens = 8192;
+            maxOutputTokens = 4096;
             maxSteps = 12;
           };
           plan = {
-            maxTokens = 1024;
-            maxOutputTokens = 1024;
+            maxTokens = 8192;
+            maxOutputTokens = 4096;
             maxSteps = 8;
           };
         };
@@ -205,46 +224,11 @@
           };
         };
         provider = {
-          vllm = {
-            npm = "@ai-sdk/openai-compatible";
-            name = "vLLM (local)";
-            options = {
-              baseURL = "http://localhost:8000/v1";
-              maxTokens = 256;
-              maxOutputTokens = 256;
-              # Be explicit for clients that forward provider options verbatim
-              # to an OpenAI-compatible backend using snake_case fields.
-              max_tokens = 256;
-              max_output_tokens = 256;
-            };
-            models = {
-              "qwen2.5-coder-14b-awq" = {
-                name = "Qwen2.5 Coder 14B AWQ";
-                tools = true;
-                # Match the vLLM server's advertised context window so
-                # opencode does not assume a larger default from model metadata.
-                limit = {
-                  context = 8192;
-                  output = 256;
-                };
-                options = {
-                  maxTokens = 256;
-                  maxOutputTokens = 256;
-                  max_tokens = 256;
-                  max_output_tokens = 256;
-                };
-              };
-            };
-          };
           ollama = {
             npm = "@ai-sdk/openai-compatible";
             name = "Ollama (local)";
             options = {
               baseURL = "http://localhost:11434/v1";
-              maxTokens = 2048;
-              maxOutputTokens = 2048;
-              max_tokens = 2048;
-              max_output_tokens = 2048;
             };
             models = {
               # Recommended agentic models with working tool calling
@@ -282,6 +266,14 @@
                 name = "Ministral 3 14B (Best current local default)";
                 tools = false;
               };
+              "ministral-3:14b-64k" = {
+                name = "Ministral 3 14B 64K (Tool calling)";
+                tools = true;
+                limit = {
+                  context = 65536;
+                  output = 8192;
+                };
+              };
               "llama3.1:70b" = {
                 name = "Llama 3.1 70B (Most Capable)";
                 tools = true;
@@ -293,6 +285,14 @@
               "dolphin-llama3:8b" = {
                 name = "Dolphin 3.0 Llama 3.1 8B (General)";
                 tools = true;
+              };
+              "gemma4-64k:latest" = {
+                name = "Gemma 4 64K";
+                tools = true;
+                limit = {
+                  context = 65536;
+                  output = 8192;
+                };
               };
               "qwen3:14b" = {
                 name = "Qwen3 14B (Reasoning-heavy alternative)";
@@ -307,10 +307,66 @@
                 name = "Qwen3 Coder 30B (Broken tools)";
                 tools = false;
               };
+              "qwen3:14b-32k" = {
+                name = "Qwen3 14B 32K (Tool calling)";
+                tools = true;
+                limit = {
+                  context = 32768;
+                  output = 4096;
+                };
+              };
+              "qwen3:14b-64k" = {
+                name = "Qwen3 14B 64K (Tool calling)";
+                tools = true;
+                limit = {
+                  context = 65536;
+                  output = 8192;
+                };
+              };
+              "qwen2.5-coder:14b" = {
+                name = "Qwen2.5 Coder 14B (Best tool calling)";
+                tools = true;
+                limit = {
+                  context = 32768;
+                  output = 4096;
+                };
+              };
+              "qwen2.5-coder:14b-64k" = {
+                name = "Qwen2.5 Coder 14B 64K (Tool calling)";
+                tools = true;
+                limit = {
+                  context = 65536;
+                  output = 8192;
+                };
+              };
+              "hermes3:8b" = {
+                name = "Hermes 3 8B (Tool calling)";
+                tools = true;
+                limit = {
+                  context = 8192;
+                  output = 2048;
+                };
+              };
+              "hermes3:3b" = {
+                name = "Hermes 3 3B (Lightweight tool calling)";
+                tools = true;
+                limit = {
+                  context = 8192;
+                  output = 2048;
+                };
+              };
+              "qwen3.6-64k:35b" = {
+                name = "Qwen3.6 35B 64K (Tool calling)";
+                tools = true;
+                limit = {
+                  context = 65536;
+                  output = 8192;
+                };
+              };
             };
           };
         };
-        model = "ollama/llama3.1:8b-32k";
+        model = "ollama/qwen3.6-64k:35b";
       };
     };
   };
@@ -328,8 +384,12 @@
     tigervnc  # High-performance VNC server (x0vncserver for capturing GPU display)
 
     # Additional CLI tools
+    lsof  # Required by opencode.nvim to find running opencode processes
     glow  # Markdown viewer
     gh    # GitHub CLI
+    xclip  # Clipboard provider for Neovim on X11/VNC sessions
+    xsel   # Fallback clipboard provider for Neovim on X11/VNC sessions
+    wl-clipboard  # Clipboard provider for Neovim on Wayland sessions
 
     # LSP servers (NixOS-provided instead of Mason due to FHS incompatibility)
     lua-language-server
