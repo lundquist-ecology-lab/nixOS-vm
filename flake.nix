@@ -20,20 +20,6 @@
         config = {
           allowUnfree = true;
         };
-        overlays = [
-          (final: prev: {
-            ollama = prev.ollama.overrideAttrs (finalAttrs: oldAttrs: {
-              version = "0.23.0";
-              src = final.fetchFromGitHub {
-                owner = "ollama";
-                repo = "ollama";
-                tag = "v${finalAttrs.version}";
-                hash = "sha256-VYaFCSqhIlJPJv1SUiNDgSzLqySK3NTfucdWA7IZaAk=";
-              };
-              doCheck = false;
-            });
-          })
-        ];
       };
 
       # Overlays for Python version overrides

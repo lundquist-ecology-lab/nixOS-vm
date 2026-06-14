@@ -360,7 +360,7 @@
     })
     (pkgs.writeShellApplication {
       name = "ai-trading-verify";
-      runtimeInputs = [ ];
+      runtimeInputs = [ unstablePkgs.docker ];
       text = ''
         VENV_DIR="$HOME/ai-trading-venv"
 
@@ -448,7 +448,7 @@ else:
     })
     (pkgs.writeShellApplication {
       name = "ai-trading-lean";
-      runtimeInputs = with pkgs; [ docker ];
+      runtimeInputs = [ unstablePkgs.docker ];
       text = ''
         echo "Pulling QuantConnect LEAN Docker image..."
         docker pull quantconnect/lean:latest
@@ -546,6 +546,7 @@ else:
   virtualisation.docker = {
     enable = true;
     enableOnBoot = true;
+    package = unstablePkgs.docker;
   };
 
   # NVIDIA Container Toolkit for Docker GPU access (needed for QuantConnect LEAN)
